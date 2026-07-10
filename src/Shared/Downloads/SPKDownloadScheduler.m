@@ -56,6 +56,23 @@ static BOOL SPKDownloadJobHasInFlightItems(SPKDownloadJob *job) {
     return NO;
 }
 
+// Delete a job's on-disk scratch (its staging directory + any staged source
+// input files). Called when a job leaves history: the staged file backs the
+// history entry's tap-to-preview, so it must live exactly as long as the entry.
+static void SPKDeleteJobScratch(SPKDownloadJob *job) {
+    if (!job)
+        return;
+    NSFileManager *fm = NSFileManager.defaultManager;
+    NSString *staging = [SPKDownloadStore stagingDirectoryForJobID:job.jobID];
+    if (staging.length)
+        [fm removeItemAtPath:staging error:nil];
+    for (SPKDownloadItem *item in job.mutableItems) {
+        NSString *source = item.request.localSourcePath;
+        if (source.length)
+            [fm removeItemAtPath:source error:nil];
+    }
+}
+
 static NSString *SPKPreferredExtensionForDownloadItem(NSString *stagedPath, NSURL *sourceURL, SPKDownloadItem *item) {
     NSString *extension = item.request.preferredFileExtension;
     if (extension.length == 0)
@@ -134,12 +151,34 @@ static NSString *SPKRenameStagedPath(NSString *stagedPath, SPKDownloadItem *item
     _duplicatePolicy = [SPKDownloadDuplicatePolicy new];
     _destinationWriter = [SPKDownloadDestinationWriter new];
     [self refreshConcurrencyLimit];
+    [self sweepOrphanedScratch];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(defaultsChanged) name:NSUserDefaultsDidChangeNotification object:nil];
     return self;
 }
 
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
+// Reclaim staged scratch that no longer belongs to a history entry — interrupted
+// downloads, crash leftovers, or backlog from builds that didn't clean up on
+// history removal. Loaded jobs are all in history (active items were marked
+// interrupted on load), so anything on disk without a matching job is an orphan.
+- (void)sweepOrphanedScratch {
+    NSMutableSet<NSString *> *jobIDs = [NSMutableSet set];
+    NSMutableSet<NSString *> *sourcePaths = [NSMutableSet set];
+    for (SPKDownloadJob *job in self.jobs) {
+        if (job.jobID)
+            [jobIDs addObject:job.jobID];
+        for (SPKDownloadItem *item in job.mutableItems) {
+            NSString *source = item.request.localSourcePath;
+            if (source.length)
+                [sourcePaths addObject:source];
+        }
+    }
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY, 0), ^{
+        [SPKDownloadStore purgeTransientCacheKeepingJobIDs:jobIDs sourcePaths:sourcePaths];
+    });
 }
 
 - (void)defaultsChanged {
@@ -246,6 +285,8 @@ static NSString *SPKRenameStagedPath(NSString *stagedPath, SPKDownloadItem *item
         }];
         if (finished.count > limit) {
             NSRange trim = NSMakeRange(limit, finished.count - limit);
+            for (SPKDownloadJob *job in [finished subarrayWithRange:trim])
+                SPKDeleteJobScratch(job);
             [finished removeObjectsInRange:trim];
         }
         self.jobs = [[active arrayByAddingObjectsFromArray:finished] mutableCopy];
@@ -863,6 +904,8 @@ static NSString *SPKRenameStagedPath(NSString *stagedPath, SPKDownloadItem *item
         for (SPKDownloadJob *job in self.jobs) {
             if (SPKDownloadJobHasInFlightItems(job)) {
                 [remaining addObject:job];
+            } else {
+                SPKDeleteJobScratch(job);
             }
         }
         self.jobs = remaining;
@@ -877,8 +920,11 @@ static NSString *SPKRenameStagedPath(NSString *stagedPath, SPKDownloadItem *item
             (void)idx;
             return [obj.jobID isEqualToString:jobID];
         }];
-        if (indexes.count)
+        if (indexes.count) {
+            for (SPKDownloadJob *job in [self.jobs objectsAtIndexes:indexes])
+                SPKDeleteJobScratch(job);
             [self.jobs removeObjectsAtIndexes:indexes];
+        }
     }
     [self.store persistJobs:[self allJobs] immediately:YES];
     [[NSNotificationCenter defaultCenter] postNotificationName:SPKDownloadServiceDidChangeNotification object:self];

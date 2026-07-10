@@ -630,7 +630,7 @@ typedef NS_ENUM(NSUInteger, SPKDownloadsHistoryRowKind) {
 - (void)clearFinished {
     [SPKIGAlertPresenter presentAlertFromViewController:self
                                                   title:@"Clear Finished Downloads"
-                                                message:@"Active and queued downloads are kept."
+                                                message:@"Removes finished entries and their staged preview copies. Active and queued downloads are kept; media saved to Photos or the Gallery is not affected."
                                                 actions:@[
                                                     [SPKIGAlertAction actionWithTitle:@"Cancel"
                                                                                 style:SPKIGAlertActionStyleCancel

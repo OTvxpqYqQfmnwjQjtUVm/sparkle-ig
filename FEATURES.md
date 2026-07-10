@@ -305,6 +305,9 @@ the main settings search.
 - **Parallel Downloads**: Limits concurrent download work from 1–4 (default 2) across direct saves, carousel items, conversions, and DASH merge pipelines.
 - **History Limit**: Caps saved download actions at a configurable history limit (default 300 entries).
 
+### Storage
+- Each download keeps a **staged copy on disk** so its history entry stays previewable on tap; this staged data (plus staged source/preview scratch) is what the **Storage Usage → Downloads** figure counts. Clearing a download from history — via **Clear Finished Downloads**, a swipe-delete, or the history-limit trim — frees its staged copy automatically. Media already saved to Photos or the Gallery is never affected. On launch, Sparkle also sweeps any **orphaned** staged leftovers no longer tied to a history entry (interrupted downloads, crash leftovers, or backlog from older builds), so the cache stays bounded by your history without any manual step.
+
 ### Quality
 - **Enhanced Media Resolution**: Requests higher-resolution media for downloads.
 - **Default Photo Quality**: `High` / `Low` (or always ask).

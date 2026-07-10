@@ -19,8 +19,61 @@
     return [[self v2RootDirectory] stringByAppendingPathComponent:@"history.json"];
 }
 
++ (NSString *)stagingRootDirectory {
+    return [[self v2RootDirectory] stringByAppendingPathComponent:@"staging"];
+}
+
 + (NSString *)stagingDirectoryForJobID:(NSString *)jobID {
-    return [[[self v2RootDirectory] stringByAppendingPathComponent:@"staging"] stringByAppendingPathComponent:jobID ?: @"unknown"];
+    return [[self stagingRootDirectory] stringByAppendingPathComponent:jobID ?: @"unknown"];
+}
+
++ (NSString *)sourcesRootDirectory {
+    return [[self v2RootDirectory] stringByAppendingPathComponent:@"sources"];
+}
+
++ (NSString *)previewsRootDirectory {
+    return [[self v2RootDirectory] stringByAppendingPathComponent:@"previews"];
+}
+
++ (unsigned long long)purgeTransientCacheKeepingJobIDs:(NSSet<NSString *> *)keepJobIDs
+                                           sourcePaths:(NSSet<NSString *> *)keepSourcePaths {
+    NSFileManager *fm = NSFileManager.defaultManager;
+    unsigned long long freed = 0;
+
+    // staging/<jobID> — a whole directory per download; keep listed/in-flight jobs.
+    NSString *staging = [self stagingRootDirectory];
+    for (NSString *entry in [fm contentsOfDirectoryAtPath:staging error:nil]) {
+        if ([keepJobIDs containsObject:entry])
+            continue;
+        NSString *path = [staging stringByAppendingPathComponent:entry];
+        freed += [SPKStoragePaths sizeOfDirectory:path];
+        [fm removeItemAtPath:path error:nil];
+    }
+
+    // sources/<uuid>.<ext> — staged input files; keep any a live job points at.
+    NSString *sources = [self sourcesRootDirectory];
+    for (NSString *entry in [fm contentsOfDirectoryAtPath:sources error:nil]) {
+        NSString *path = [sources stringByAppendingPathComponent:entry];
+        if ([keepSourcePaths containsObject:path])
+            continue;
+        NSDictionary *attrs = [fm attributesOfItemAtPath:path error:nil];
+        freed += [attrs[NSFileSize] unsignedLongLongValue];
+        [fm removeItemAtPath:path error:nil];
+    }
+
+    // previews/ — regenerable scratch, never referenced after use.
+    NSString *previews = [self previewsRootDirectory];
+    for (NSString *entry in [fm contentsOfDirectoryAtPath:previews error:nil]) {
+        NSString *path = [previews stringByAppendingPathComponent:entry];
+        NSDictionary *attrs = [fm attributesOfItemAtPath:path error:nil];
+        if ([attrs[NSFileType] isEqual:NSFileTypeDirectory])
+            freed += [SPKStoragePaths sizeOfDirectory:path];
+        else
+            freed += [attrs[NSFileSize] unsignedLongLongValue];
+        [fm removeItemAtPath:path error:nil];
+    }
+
+    return freed;
 }
 
 - (void)ensureDirectories {
