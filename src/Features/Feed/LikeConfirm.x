@@ -243,6 +243,40 @@ static BOOL SPKBypassFeedPostLikeConfirm = NO;
         }                                                \
     } while (0)
 
+// A single comment like tap fans out through a forwarding chain: the Swift
+// IGCommentCell handler forwards to IGCommentCellController (and the combined
+// like/dislike variants forward to the plain ones). Each link is hooked, so
+// without a guard the confirmation is presented once per link — the user sees
+// a second prompt after confirming the first. We wrap the confirmed %orig in a
+// re-entrancy flag so the forwarded calls run through untouched.
+static BOOL SPKBypassCommentLikeConfirm = NO;
+
+#define SPK_RUN_WITH_COMMENT_LIKE_CONFIRM_BYPASS(orig) \
+    do {                                               \
+        SPKBypassCommentLikeConfirm = YES;             \
+        @try {                                         \
+            orig;                                      \
+        } @finally {                                   \
+            SPKBypassCommentLikeConfirm = NO;          \
+        }                                              \
+    } while (0)
+
+// The confirm-like pref must never affect the dislike button. Its state update
+// enum (dislikeUpdate) is unreliable across builds, so we key off the tapped
+// button's accessibility identifier ("comment-dislike-button") / label instead.
+static BOOL SPKCommentButtonIsDislike(id button) {
+    if (![button isKindOfClass:[UIView class]])
+        return NO;
+    UIView *view = (UIView *)button;
+    NSString *identifier = view.accessibilityIdentifier.lowercaseString;
+    if ([identifier containsString:@"dislike"])
+        return YES;
+    NSString *label = view.accessibilityLabel.lowercaseString;
+    if ([label containsString:@"dislike"])
+        return YES;
+    return NO;
+}
+
 #define SPKCONFIRMLIKE(prefKey, logText, titleText, messageText, orig) \
     if ([SPKUtils getBoolPref:prefKey]) {                              \
         SPKLog(@"General", @"[Sparkle] %@", logText);                  \
@@ -294,6 +328,9 @@ static BOOL SPKBypassFeedPostLikeConfirm = NO;
     }
 
 #define CONFIRMCOMMENTLIKE(context, button, orig)                                                      \
+    if (SPKBypassCommentLikeConfirm || SPKCommentButtonIsDislike(button)) {                            \
+        return orig;                                                                                   \
+    }                                                                                                  \
     if ([SPKUtils getBoolPref:@"general_comments_confirm_like"]) {                                     \
         BOOL isUnlike = SPKCommentLikeIsUnlike((button), (context));                                   \
         SPKLog(@"General", @"[Sparkle] Confirm comment %@ triggered", isUnlike ? @"unlike" : @"like"); \
@@ -304,11 +341,21 @@ static BOOL SPKBypassFeedPostLikeConfirm = NO;
             @"Confirm Comment Unlike",                                                                 \
             @"Are you sure you want to unlike this comment?",                                          \
             ^{                                                                                         \
-                orig;                                                                                  \
+                SPK_RUN_WITH_COMMENT_LIKE_CONFIRM_BYPASS(orig);                                        \
             });                                                                                        \
     } else {                                                                                           \
         return orig;                                                                                   \
     }
+
+// The combined like/dislike handlers fire for BOTH the like and the dislike
+// button. `dislikeUpdate` being nonzero is a secondary signal that the dislike
+// button was tapped (the button-identifier check in CONFIRMCOMMENTLIKE is the
+// primary one) — either way the confirm-like pref must not apply.
+#define CONFIRMCOMMENTLIKEORDISLIKE(context, button, dislikeUpdate, orig) \
+    if ((dislikeUpdate) != 0) {                                          \
+        return orig;                                                     \
+    }                                                                    \
+    CONFIRMCOMMENTLIKE(context, button, orig)
 
 #define CONFIRMREELSLIKE(context, button, orig)                                                      \
     if ([SPKUtils getBoolPref:@"reels_confirm_like"]) {                                              \
@@ -431,7 +478,9 @@ static BOOL SPKBypassFeedPostLikeConfirm = NO;
 }
 // IG 436+ (comment dislikes): like taps route through this combined handler.
 - (void)commentCell:(id)arg1 didTapLikeOrDislikeButton:(id)arg2 likeButton:(id)arg3 dislikeUpdate:(long long)arg4 {
-    CONFIRMCOMMENTLIKE(arg1, arg3, %orig);
+    // arg2 is the button that was actually tapped (like or dislike); check it so
+    // the dislike button is filtered by identifier, not just by dislikeUpdate.
+    CONFIRMCOMMENTLIKEORDISLIKE(arg1, arg2, arg4, %orig);
 }
 - (void)commentCell:(id)arg1 didTapLikedByButtonForUser:(id)arg2 {
     CONFIRMCOMMENTLIKE(nil, nil, %orig);
@@ -453,15 +502,23 @@ static BOOL SPKBypassFeedPostLikeConfirm = NO;
 %end
 // IG 436+ : in the comment thread/detail view the like (and like/dislike) tap
 // lands on the Swift comment cell (IGCommentCells.IGCommentCell) before it
-// forwards to its UFI delegate (IGCommentCellController). Gating here is the
-// reliable chokepoint regardless of whether comment-dislikes routing is active —
-// the controller-level hooks below alone don't fire on this build.
+// forwards to its UFI delegate (IGCommentCellController). Both links are hooked
+// so gating works whichever fires; the SPKBypassCommentLikeConfirm guard keeps
+// the forwarded call from surfacing a second prompt after the first is confirmed.
 %hook IGCommentCell
 - (void)contentViewDidTapLike:(id)arg1 {
     CONFIRMCOMMENTLIKE(self, arg1, %orig);
 }
+// Combined like/dislike handler. Unlike the controller variant, this method has
+// NO tapped-button parameter — it always receives both the dislike button (arg1)
+// and the like button (arg2), whichever was tapped — and `dislikeUpdate` is
+// unreliable across builds. So we can't tell here whether the user liked or
+// disliked. Pass it straight through: a *like* tap fans out to the plain
+// contentViewDidTapLike: above (which confirms with the unambiguous like button),
+// while a *dislike* tap fans out to an unhooked dislike handler and never
+// surfaces the like-confirm prompt.
 - (void)contentViewDidTapLikeOrDislikeButtonWithDislikeButton:(id)arg1 likeButton:(id)arg2 dislikeUpdate:(long long)arg3 {
-    CONFIRMCOMMENTLIKE(self, arg2, %orig);
+    return %orig;
 }
 %end
 
