@@ -251,7 +251,8 @@ Per-feature control of the Sparkle notification pill and its haptics. See **Noti
 - **Long Press to Expand**: Long-press a profile picture to open it expanded.
 
 ### Indicators
-- **Show Following Indicator**: Shows whether the profile follows you.
+- **Following Indicator**: Shows whether the profile follows you back, under their stats. Choose **Off**, **Icon**, **Text**, or **Icon & Text**.
+- **Colorful Indicator**: Turn on to use the colored green/red instead of the native gray.
 - **Hide Notes Bubble**: Removes the notes thought-bubble over the profile picture.
 - **Hide Threads Button**: Removes the Threads switch button from the profile header.
 

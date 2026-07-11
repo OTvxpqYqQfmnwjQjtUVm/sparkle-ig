@@ -73,6 +73,11 @@ static NSDictionary *SPKFeatureDefaults(void) {
         @"msgs_deleted_log_respect_seen_list" : @(NO),
         @"profile_photo_zoom" : @(NO),
         @"profile_follow_indicator" : @(NO),
+        // The mode (`profile_follow_indicator_mode`) and colorful
+        // (`profile_follow_indicator_colorful`) keys are intentionally left
+        // unregistered so FollowIndicator.x can fall back to the legacy bool
+        // above for pre-mode-menu users (→ text + colorful). Everyone else
+        // defaults to off / native gray.
         @"profile_analyzer_track_visits" : @(NO),
         @"feed_action_btn" : @(NO),
         @"feed_action_btn_default_action" : @"none",

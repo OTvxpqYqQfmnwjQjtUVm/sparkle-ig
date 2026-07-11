@@ -1,6 +1,7 @@
 #import "SPKProfileSettingsProvider.h"
 
 #import "../../AssetUtils.h"
+#import "../../Features/Profile/FollowIndicator.h"
 #import "../../Shared/ActionButton/SPKActionButtonConfiguration.h"
 #import "../../Utils.h"
 #import "../SPKTopicSettingsSupport.h"
@@ -68,6 +69,54 @@ static UIMenu *SPKProfileDefaultCopyInfoMenu(void) {
     ]];
 }
 
+static NSString *const kSPKFollowIndicatorModeKey = @"profile_follow_indicator_mode";
+static NSString *const kSPKFollowIndicatorModeOff = @"off";
+static NSString *const kSPKFollowIndicatorModeText = @"text";
+static NSString *const kSPKFollowIndicatorModeIcon = @"icon";
+static NSString *const kSPKFollowIndicatorModeIconText = @"icontext";
+
+// Mirrors FollowIndicator.x: no default is registered for the mode key, so an
+// empty value means "use the legacy on/off bool" for pre-mode-menu users.
+static NSString *SPKFollowIndicatorEffectiveMode(void) {
+    NSString *mode = [SPKUtils getStringPref:kSPKFollowIndicatorModeKey];
+    if (mode.length > 0)
+        return mode;
+    return [SPKUtils getBoolPref:@"profile_follow_indicator"] ? kSPKFollowIndicatorModeText
+                                                              : kSPKFollowIndicatorModeOff;
+}
+
+static NSString *const kSPKFollowIndicatorColorfulKey = @"profile_follow_indicator_colorful";
+
+// Mirrors FollowIndicator.x: no default is registered, so a never-set value
+// falls back to the legacy bool (pre-menu enabled users keep colored).
+static BOOL SPKFollowIndicatorColorfulEnabled(void) {
+    id value = SPKPreferenceObjectForKey(kSPKFollowIndicatorColorfulKey);
+    if (value == nil)
+        return [SPKUtils getBoolPref:@"profile_follow_indicator"];
+    return [value boolValue];
+}
+
+// No per-item icons: the menu is a plain title list. The cell keeps a static
+// leading icon instead of reflecting the selection.
+static UICommand *SPKFollowIndicatorModeCommand(NSString *title, NSString *value) {
+    return [UICommand commandWithTitle:title
+                                 image:nil
+                                action:@selector(menuChanged:)
+                          propertyList:@{
+                              @"defaultsKey" : kSPKFollowIndicatorModeKey,
+                              @"value" : value
+                          }];
+}
+
+static UIMenu *SPKFollowIndicatorModeMenu(void) {
+    return [UIMenu menuWithChildren:@[
+        SPKFollowIndicatorModeCommand(@"Off", kSPKFollowIndicatorModeOff),
+        SPKFollowIndicatorModeCommand(@"Icon", kSPKFollowIndicatorModeIcon),
+        SPKFollowIndicatorModeCommand(@"Text", kSPKFollowIndicatorModeText),
+        SPKFollowIndicatorModeCommand(@"Icon & Text", kSPKFollowIndicatorModeIconText)
+    ]];
+}
+
 @implementation SPKProfileSettingsProvider
 
 + (SPKSetting *)rootSetting {
@@ -88,9 +137,42 @@ static UIMenu *SPKProfileDefaultCopyInfoMenu(void) {
         ],
                         @"Long press a profile picture to open it expanded."),
         SPKTopicSection(@"Indicators", @[
-            [SPKSetting switchCellWithTitle:@"Show Following Indicator"
-                                       icon:SPKSettingsIcon(@"user_check")
-                                defaultsKey:@"profile_follow_indicator"],
+            ({
+                SPKSetting *mode = [SPKSetting menuCellWithTitle:@"Following Indicator"
+                                                            icon:SPKSettingsIcon(@"user_check")
+                                                            menu:SPKFollowIndicatorModeMenu()];
+                mode.accessoryTextProvider = ^NSString * {
+                    NSString *value = SPKFollowIndicatorEffectiveMode();
+                    if ([value isEqualToString:kSPKFollowIndicatorModeText])
+                        return @"Text";
+                    if ([value isEqualToString:kSPKFollowIndicatorModeIcon])
+                        return @"Icon";
+                    if ([value isEqualToString:kSPKFollowIndicatorModeIconText])
+                        return @"Icon + Text";
+                    return @"Off";
+                };
+                mode;
+            }),
+            ({
+                // Off (default) = Instagram's native gray for both states, so it
+                // doesn't stand out as modded. On = the colored green/red. Uses a
+                // custom value provider so the legacy fallback (pre-menu users who
+                // had the indicator on keep colored) is reflected accurately.
+                SPKSetting *colorful = [SPKSetting switchCellWithTitle:@"Colorful Indicator"
+                                                                  icon:SPKSettingsIcon(@"palette")
+                                                           defaultsKey:kSPKFollowIndicatorColorfulKey];
+                colorful.switchValueProvider = ^BOOL {
+                    return SPKFollowIndicatorColorfulEnabled();
+                };
+                colorful.switchChangeHandler = ^(BOOL isOn) {
+                    SPKPreferenceSetObject(@(isOn), kSPKFollowIndicatorColorfulKey);
+                    [[NSNotificationCenter defaultCenter] postNotificationName:SPKFollowIndicatorDidChangeNotification object:nil];
+                };
+                colorful.hiddenProvider = ^BOOL {
+                    return [SPKFollowIndicatorEffectiveMode() isEqualToString:kSPKFollowIndicatorModeOff];
+                };
+                colorful;
+            }),
             [SPKSetting switchCellWithTitle:@"Hide Notes Bubble"
                                        icon:SPKSettingsIcon(@"notes")
                                 defaultsKey:@"profile_hide_notes_bubble"],
@@ -98,7 +180,7 @@ static UIMenu *SPKProfileDefaultCopyInfoMenu(void) {
                                        icon:SPKSettingsIcon(@"threads")
                                 defaultsKey:@"profile_hide_threads_btn"]
         ],
-                        nil),
+                        @"Following Indicator shows whether a profile follows you back, under their stats. Text or Icon; it's Instagram's native gray unless you turn on Colorful Indicator for green/red."),
         SPKTopicSection(@"Confirmation", @[
             [SPKSetting switchCellWithTitle:@"Confirm Follow"
                                        icon:SPKSettingsIcon(@"user_follow")
