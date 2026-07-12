@@ -175,7 +175,7 @@ Per-feature control of the Sparkle notification pill and its haptics. See **Noti
 
 ### Messaging
 - **Manually Mark Seen**: adds an eye button to mark chats seen.
-- **Mark Seen on Message Send / Reply / Reaction**: auto-seen triggers; disabled unless Manually Mark Seen is on.
+- **Mark Seen on Message Send / Reply / Reaction / Typing**: auto-seen triggers; disabled unless Manually Mark Seen is on.
 - **Seen Button Position**: choose whether the eye button sits in the top nav bar or as a bubble above the composer, within thumb reach and hidden while you type. The bubble can be dragged aside to peek underneath and snaps back when you scroll. Disabled unless Manually Mark Seen is on.
 - **Included / Excluded Chats**: two separate per-account lists (Included when off, Excluded when on), same model as stories.
 

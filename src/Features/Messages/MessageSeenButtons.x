@@ -57,6 +57,10 @@ static inline BOOL SPKAutoSeenOnReactionEnabled(void) {
     return SPKDirectManualSeenRulesEnabled() && [SPKUtils getBoolPref:@"msgs_seen_on_reaction"];
 }
 
+static inline BOOL SPKAutoSeenOnTypingEnabled(void) {
+    return SPKDirectManualSeenRulesEnabled() && [SPKUtils getBoolPref:@"msgs_seen_on_typing"];
+}
+
 static BOOL SPKValueIsPresent(id value) {
     if (!value || value == (id)kCFNull)
         return NO;
@@ -1180,6 +1184,11 @@ if ([nearestVC isKindOfClass:%c(IGDirectThreadViewController)]) {
     %orig;
     if (SPKThreadSeenBubbleEnabled())
         SPKUpdateThreadSeenBubbleVisibility(self, YES);
+    // Mark seen the moment you start typing a reply. The auto-seen pipeline is
+    // debounced per source+reason, so it fires once when the composer goes from
+    // empty to non-empty rather than on every keystroke.
+    if (SPKAutoSeenOnTypingEnabled() && SPKThreadComposerTextLength(self) > 0)
+        SPKTriggerAutoSeenForSource(self, @"typing");
 }
 
 %new - (void)spk_didTapThreadSeenBubble:(UIButton *)sender {
