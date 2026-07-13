@@ -94,6 +94,7 @@ static NSDictionary *SPKFeatureDefaults(void) {
         @"stories_action_btn" : @(YES),
         @"stories_action_btn_default_action" : @"none",
         @"msgs_action_btn" : @(YES),
+        @"msgs_action_btn_chat_media" : @(NO),
         @"msgs_action_btn_default_action" : @"none",
         @"profile_action_btn" : @(YES),
         @"profile_action_btn_default_action" : @"none",

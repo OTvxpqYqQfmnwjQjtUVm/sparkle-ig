@@ -11,6 +11,7 @@ FOUNDATION_EXPORT void SPKInstallFollowingFeedHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallReelsActionButtonHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallStoriesActionButtonHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallMessagesActionButtonHooksIfEnabled(void);
+FOUNDATION_EXPORT void SPKInstallAggregatedMediaActionButtonHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallProfileActionButtonHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallProfilePhotoZoomHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallBackgroundRefreshHooksIfEnabled(void);
@@ -204,6 +205,7 @@ void SPKInstallMessagesSurfaceHooksIfNeeded(void) {
     }
     SPKInstallTweakMessagesHooksIfNeeded();
     SPKInstallMessagesActionButtonHooksIfEnabled();
+    SPKInstallAggregatedMediaActionButtonHooksIfEnabled();
     SPKInstallSeenButtonHooksIfNeeded();
     SPKInstallCreateGroupButtonControlHooksIfEnabled();
     SPKInstallConfirmSendHooksIfEnabled();

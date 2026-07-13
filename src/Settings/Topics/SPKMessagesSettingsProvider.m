@@ -8,6 +8,7 @@
 #import "../SPKTopicSettingsSupport.h"
 
 static NSString *const kSPKMessagesActionButtonEnabledKey = @"msgs_action_btn";
+static NSString *const kSPKMessagesActionButtonChatMediaKey = @"msgs_action_btn_chat_media";
 static NSString *const kSPKMessagesAudioCallConfirmKey = @"msgs_confirm_audio_call";
 static NSString *const kSPKMessagesVideoCallConfirmKey = @"msgs_confirm_video_call";
 
@@ -97,15 +98,27 @@ static NSArray *SPKMessagesSettingsSections(void) {
                                                                                             menu:SPKLastActiveFormatMenu()],
                                                                    SPKSettingsIcon(@"clock"));
 
+    // Extends the action button to the full-screen viewer for permanent chat media
+    // (camera-roll photos/videos, chat-menu media), replacing IG's native Save.
+    // Only meaningful while the master action button toggle is on.
+    SPKSetting *chatMediaActionButton = [SPKSetting switchCellWithTitle:@"Also Show on Chat Media"
+                                                                  icon:SPKSettingsIcon(@"photo")
+                                                           defaultsKey:kSPKMessagesActionButtonChatMediaKey];
+    chatMediaActionButton.enabledProvider = ^BOOL {
+        return [SPKUtils getBoolPref:kSPKMessagesActionButtonEnabledKey];
+    };
+
     return @[
         SPKTopicSection(@"Action Button", @[
             [SPKSetting switchCellWithTitle:@"Messages Action Button"
                                        icon:SPKSettingsIcon(@"action")
                                 defaultsKey:kSPKMessagesActionButtonEnabledKey],
+            chatMediaActionButton,
             SPKActionButtonDefaultActionNavigationSetting(SPKActionButtonSourceDirect),
             SPKActionButtonConfigurationNavigationSetting(SPKActionButtonSourceDirect, @"Messages", SPKActionButtonSupportedActionsForSource(SPKActionButtonSourceDirect), SPKActionButtonDefaultSectionsForSource(SPKActionButtonSourceDirect))
         ],
-                        @"Choose what tapping the action button does. Long press opens the full menu."),
+                        @"Choose what tapping the action button does. Long press opens the full menu.\n"
+                        @"\"Also Show on Chat Media\" adds it to camera-roll photos and videos opened in a chat."),
         SPKTopicSection(@"Messaging", @[
             [SPKSetting switchCellWithTitle:@"Manually Mark Seen"
                                        icon:SPKSettingsIcon(@"eye")

@@ -214,6 +214,12 @@
 @interface IGDirectVisualMessageViewerController : UIViewController
 @end
 
+// Full-screen viewer for permanent DM media (camera-roll photos/videos, chat-menu
+// media). Sparkle installs its action button here; see AggregatedMediaActionButton.xm.
+@interface IGDirectAggregatedMediaViewerViewController : UIViewController
+- (void)scrollViewDidEndDecelerating:(id)scrollView;
+@end
+
 @interface IGDirectVisualMessageViewerViewModeAwareDataSource : NSObject
 @end
 

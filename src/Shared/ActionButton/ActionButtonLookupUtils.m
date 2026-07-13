@@ -899,6 +899,18 @@ id SPKDirectCurrentMessageFromController(UIViewController *controller) {
     if (!controller)
         return nil;
 
+    // The aggregated media viewer (camera-roll / permanent chat media) exposes the
+    // current item as `_mediaDisplayedInUI` (IGDirectAggregatedMedia). It carries a
+    // `senderId`, which the senderPk → username machinery below resolves against the
+    // session's direct cache.
+    if ([controller isKindOfClass:NSClassFromString(@"IGDirectAggregatedMediaViewerViewController")]) {
+        id media = [SPKUtils getIvarForObj:controller name:"_mediaDisplayedInUI"];
+        if (!media)
+            media = SPKObjectForSelector(controller, @"mediaDisplayedInUI");
+        if (media)
+            return media;
+    }
+
     if (SPKIsDirectVisualMessageViewer(controller)) {
         NSArray *messages = SPKDirectVisualViewerMessages(controller);
         if (messages.count > 0) {
@@ -1014,6 +1026,17 @@ NSString *SPKDirectUsernameFromController(UIViewController *controller) {
     if (sessionUsername.length > 0) {
         SPKDMTrace(@"current session username=%@", sessionUsername);
     }
+    // Aggregated media viewer: the current item carries the true `senderId`. Resolve
+    // it first — the generic object-graph scan below would otherwise pick an arbitrary
+    // participant in a group thread (there's no single "other" user to fall back to).
+    if ([controller isKindOfClass:NSClassFromString(@"IGDirectAggregatedMediaViewerViewController")]) {
+        NSString *sender = SPKDirectUsernameFromSenderPK(controller, message, sessionUsername);
+        if (sender.length > 0) {
+            SPKDMTrace(@"aggregated viewer username via senderPk: %@", sender);
+            return sender;
+        }
+    }
+
     NSString *username = SPKUsernameFromMediaObject(message);
     if (username.length > 0) {
         if (sessionUsername.length > 0 &&

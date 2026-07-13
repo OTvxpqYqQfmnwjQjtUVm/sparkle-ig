@@ -183,6 +183,7 @@ On systems without Liquid Glass, the tab bar section is replaced by a focused to
 
 ### Action Button
 - **Messages Action Button**, **Default Tap Action**, **Configure Actions**: For visual messages.
+- **Also Show on Chat Media**: Extends the action button to the full-screen viewer for permanent chat media — camera-roll photos and videos opened from a thread or the chat's shared-media grid. Replaces Instagram's native Save button, so media can be downloaded to Photos, the Sparkle Gallery, copied, shared, etc. Chat videos honor the **Download Video Quality** setting: when set to *Always Ask* the quality picker offers the video's full DASH ladder, same as feed/reels. Requires the Messages Action Button toggle.
 
 ### Messaging
 - **Manually Mark Seen**: adds an eye button to mark chats seen.
