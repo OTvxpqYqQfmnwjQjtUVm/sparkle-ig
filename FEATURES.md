@@ -411,7 +411,7 @@ clearing, and more.
 - **Shortcut Haptics**: Light haptic feedback when opening Settings / Gallery.
 - **Show Settings on App Launch**.
 - **Disable All Settings**: Master kill switch; only Settings access remains. **(restart)**
-- **Reset Onboarding Completion State**.
+- **Show Onboarding**: Replays the first-run introduction sheet at any time.
 - **Reset Safe Startup Mode**: Clears Sparkle's failed-launch counters and re-enables feature hooks after the launch failsafe kicked in.
 
 ### Settings Lock

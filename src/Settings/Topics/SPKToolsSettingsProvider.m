@@ -8,6 +8,7 @@
 #import "../../Shared/Settings/SPKSettingsLockManager.h"
 #import "../../Shared/UI/SPKIGAlertPresenter.h"
 #import "../../Utils.h"
+#import "../SPKOnboardingViewController.h"
 #import "../SPKSettingsViewController.h"
 #import "../SPKTopicSettingsSupport.h"
 #import "SPKInterfaceSettingsProvider.h"
@@ -126,12 +127,11 @@ static NSDictionary *SPKSettingsLockSection(void) {
             [SPKSetting switchCellWithTitle:@"Disable All Settings"
                                 defaultsKey:@"tools_disable_all"
                             requiresRestart:YES],
-            [SPKSetting buttonCellWithTitle:@"Reset Onboarding Completion State"
+            [SPKSetting buttonCellWithTitle:@"Show Onboarding"
                                    subtitle:@""
                                        icon:nil
                                      action:^(void) {
-                                         [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"app_first_run"];
-                                         [SPKUtils showRestartConfirmation];
+                                         [SPKOnboardingViewController presentFromViewController:nil onFinish:nil];
                                      }],
             [SPKSetting buttonCellWithTitle:@"Reset Safe Startup Mode"
                                    subtitle:@""

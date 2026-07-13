@@ -8,6 +8,7 @@
 #import "../Shared/UI/SPKIGAlertPresenter.h"
 #import "../Shared/UI/SPKMediaChrome.h"
 #import "../Shared/UI/SPKSwitch.h"
+#import "SPKOnboardingViewController.h"
 #import "SPKPreferenceAvailability.h"
 
 static char rowStaticRef[] = "row";
@@ -58,6 +59,7 @@ static double SPKNormalizedStepperValue(SPKSetting *row, double value) {
 @property (nonatomic) BOOL reduceMargin;
 @property (nonatomic) BOOL defersRestartPrompt;
 @property (nonatomic) BOOL hasPendingRestartChanges;
+@property (nonatomic) BOOL didAttemptOnboarding;
 
 @end
 
@@ -357,23 +359,33 @@ static UIImage *SPKSettingsBreadcrumbChevronImage(void) {
     [self.tableView reloadData];
 }
 
-- (void)viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self presentOnboardingIfNeeded];
+}
 
-    if (![[[NSUserDefaults standardUserDefaults] objectForKey:@"app_first_run"] isEqualToString:SPKVersionString]) {
-        UIViewController *presenter = self.presentingViewController;
-        [SPKIGAlertPresenter presentAlertFromViewController:presenter
-                                                      title:@"Sparkle Settings Info"
-                                                    message:@"In the future: Hold down on the three lines at the top right of your profile page, to re-open Sparkle settings."
-                                                    actions:@[
-                                                        [SPKIGAlertAction actionWithTitle:@"OK"
-                                                                                    style:SPKIGAlertActionStyleDefault
-                                                                                  handler:nil],
-                                                    ]];
+// First-run onboarding: a multi-step intro shown the first time the user opens
+// Sparkle settings. Only the root settings page presents it (sub-topic pages are
+// also SPKSettingsViewControllers pushed onto the same stack), and only once per
+// process — the `app_first_run` default is stamped (with SPKVersionString) when
+// onboarding finishes so it won't reappear until that version string changes. Bump
+// SPKVersionString on a release to re-show onboarding to everyone once. The Tools
+// "Show Onboarding" button replays it directly without touching first-run state.
+- (void)presentOnboardingIfNeeded {
+    if (self.didAttemptOnboarding)
+        return;
+    if (self.navigationController.viewControllers.firstObject != self)
+        return;
+    if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"app_first_run"] isEqualToString:SPKVersionString])
+        return;
+    if (self.presentedViewController)
+        return;
 
-        // Done with first-time setup for this version
+    self.didAttemptOnboarding = YES;
+
+    [SPKOnboardingViewController presentFromViewController:self onFinish:^{
         [[NSUserDefaults standardUserDefaults] setValue:SPKVersionString forKey:@"app_first_run"];
-    }
+    }];
 }
 
 - (void)setupNavigationItems {
