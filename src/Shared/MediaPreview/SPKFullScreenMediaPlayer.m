@@ -58,12 +58,11 @@ static NSString *SPKPreviewMediumDateString(NSDate *date) {
 // manual control inset is needed; keep it at zero so the scrubber sits just
 // above it.
 static CGFloat const kVideoPlayerControlBottomInset = 0.0;
-static CGFloat const kGalleryPreviewMenuIconPointSize = 22.0;
 
 static UIImage *SPKGalleryPreviewMenuIcon(NSString *resourceName) {
-    return [SPKAssetUtils
-        instagramIconNamed:(resourceName.length > 0 ? resourceName : @"more")
-                 pointSize:kGalleryPreviewMenuIconPointSize];
+    // menuIconNamed: avoids the UIGraphicsImageRenderer downscale that iOS 16's
+    // UIMenu renders blank for vector-backed (.svg) glyphs. See SPKAssetUtils.
+    return [SPKAssetUtils menuIconNamed:(resourceName.length > 0 ? resourceName : @"more")];
 }
 
 static SPKActionButtonSource SPKActionButtonSourceForPlaybackSource(
@@ -2014,8 +2013,7 @@ static CGPoint SPKCenterForBounds(CGRect bounds) {
     UIAction *selectMediaAction = [UIAction
         actionWithTitle:[NSString stringWithFormat:@"Select Media • %lu",
                                                    (unsigned long)bulkItems.count]
-                  image:[SPKAssetUtils instagramIconNamed:@"carousel"
-                                                pointSize:22.0]
+                  image:[SPKAssetUtils menuIconNamed:@"carousel"]
              identifier:nil
                 handler:^(__unused UIAction *a) {
                     typeof(self) strongSelf = weakSelf;

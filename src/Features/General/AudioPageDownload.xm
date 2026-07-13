@@ -167,7 +167,7 @@ static NSString *SPKAudioPageIconForAction(NSString *action) {
 }
 
 static UIImage *SPKAudioPageMenuIcon(NSString *iconName) {
-    return [[[SPKAssetUtils instagramIconNamed:iconName pointSize:22.0] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] imageWithTintColor:[UIColor labelColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
+    return [[[SPKAssetUtils menuIconNamed:iconName] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] imageWithTintColor:[UIColor labelColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
 }
 
 static UIImage *SPKAudioPageActionIcon(NSString *identifier, NSString *fallbackIconName) {

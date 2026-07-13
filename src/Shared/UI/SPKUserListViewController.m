@@ -191,7 +191,7 @@ typedef NS_ENUM(NSInteger, SPKUserListSortMode) {
             [children addObjectsFromArray:[weakSelf sortMenuElements]];
         if (weakSelf.infoText.length) {
             UIAction *info = [UIAction actionWithTitle:@"How It Works"
-                                                 image:[SPKAssetUtils instagramIconNamed:@"info" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                 image:[SPKAssetUtils menuIconNamed:@"info"]
                                             identifier:nil
                                                handler:^(__unused UIAction *action) {
                                                    [weakSelf spk_showInfo];
@@ -391,7 +391,7 @@ typedef NS_ENUM(NSInteger, SPKUserListSortMode) {
                                                                         [weakSelf didDeleteItem:item];
                                                                         done(YES);
                                                                     }];
-    del.image = [SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    del.image = [SPKAssetUtils menuIconNamed:@"trash"];
     del.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
     del.accessibilityLabel = @"Remove";
     UISwipeActionsConfiguration *config = [UISwipeActionsConfiguration configurationWithActions:@[ del ]];

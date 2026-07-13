@@ -532,6 +532,41 @@ static UIImage *SPKAssetLookupInstagramIcon(NSString *name, CGFloat pointSize, S
     return SPKAssetFallbackImage(pointSize, renderingMode);
 }
 
++ (UIImage *)menuIconNamed:(NSString *)name {
+    // pointSize 0 = SPKAssetScaleImage no-ops, so the catalog image is returned
+    // untouched with no UIGraphicsImageRenderer pass. That pass is exactly what
+    // iOS 16's UIMenu refuses to render for vector-backed (.svg) glyphs — even
+    // when the render size equals the native size, so we cannot redraw at all.
+    UIImage *image = [self instagramIconNamed:name
+                                    pointSize:0
+                                       source:SPKAssetCatalogSourceAutomatic
+                                renderingMode:UIImageRenderingModeAlwaysTemplate];
+    return [self menuSizedIcon:image];
+}
+
++ (UIImage *)menuSizedIcon:(UIImage *)image {
+    if (!image) {
+        return nil;
+    }
+
+    // IG menu glyphs are 24pt native, but our menus want the standard 22pt.
+    // We can't downscale through a renderer (see menuIconNamed:), so instead
+    // reinterpret the image's scale: relabelling its existing pixels at a higher
+    // scale makes the same bitmap map to a smaller point size, with no redraw —
+    // so it renders like the native image does, just at 22pt.
+    static const CGFloat kSPKMenuIconPointSize = 22.0;
+    CGFloat maxDimension = MAX(image.size.width, image.size.height);
+    CGImageRef cgImage = image.CGImage;
+    if (cgImage && maxDimension > kSPKMenuIconPointSize + 0.01) {
+        CGFloat rescaled = image.scale * (maxDimension / kSPKMenuIconPointSize);
+        image = [[UIImage imageWithCGImage:cgImage
+                                     scale:rescaled
+                               orientation:image.imageOrientation]
+                    imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    }
+    return image;
+}
+
 + (NSString *)resolvedInstagramIconNameForName:(NSString *)name {
     if (name.length == 0) {
         return nil;

@@ -370,7 +370,7 @@ static char kSPKActionsListSwitchAssocKey;
                                                                                  [weakSelf removeSectionAtIndexPath:indexPath];
                                                                                  completionHandler(YES);
                                                                              }];
-    deleteAction.image = [SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    deleteAction.image = [SPKAssetUtils menuIconNamed:@"trash"];
     deleteAction.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
     deleteAction.accessibilityLabel = @"Remove Section";
     return [UISwipeActionsConfiguration configurationWithActions:@[ deleteAction ]];

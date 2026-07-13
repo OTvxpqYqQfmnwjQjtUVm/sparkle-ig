@@ -258,7 +258,7 @@ typedef NS_ENUM(NSInteger, SPKGalleryDeleteSection) {
         SPKGalleryDeleteUserItem *item = self.users[indexPath.row];
         cell.textLabel.text = item.displayName;
         cell.detailTextLabel.text = [NSString stringWithFormat:@"%ld", (long)item.count];
-        cell.imageView.image = [SPKAssetUtils instagramIconNamed:@"user" pointSize:22.0];
+        cell.imageView.image = [SPKAssetUtils instagramIconNamed:@"user" pointSize:24.0];
         return cell;
     }
 
@@ -268,7 +268,7 @@ typedef NS_ENUM(NSInteger, SPKGalleryDeleteSection) {
     if (count) {
         cell.detailTextLabel.text = count.integerValue > 0 ? [NSString stringWithFormat:@"%ld", (long)count.integerValue] : nil;
     }
-    cell.imageView.image = [SPKAssetUtils instagramIconNamed:action.iconName pointSize:22.0];
+    cell.imageView.image = [SPKAssetUtils instagramIconNamed:action.iconName pointSize:24.0];
     cell.accessoryType = action.navigatesToUsers ? UITableViewCellAccessoryDisclosureIndicator : UITableViewCellAccessoryNone;
     return cell;
 }

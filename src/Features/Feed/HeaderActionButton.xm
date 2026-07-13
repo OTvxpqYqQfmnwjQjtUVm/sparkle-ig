@@ -257,8 +257,7 @@ static NSString *SPKHeaderButtonConfigSignature(NSArray<SPKHeaderDestination *> 
     // Build the long-press / tap-to-open menu from the enabled destinations.
     NSMutableArray<UIMenuElement *> *actions = [NSMutableArray array];
     for (SPKHeaderDestination *destination in enabled) {
-        UIImage *image = [[SPKAssetUtils instagramIconNamed:destination.iconName pointSize:22.0]
-                             imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+        UIImage *image = [SPKAssetUtils menuIconNamed:destination.iconName];
         __weak SPKFeedHeaderActionButton *weakButton = button;
         UIAction *action = [UIAction actionWithTitle:destination.title
                                                image:image

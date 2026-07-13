@@ -377,7 +377,7 @@ static UIMenu *SPKDirectSeenButtonMenu(id source) {
     NSString *toggleTitle = SPKDirectCurrentThreadRuleActionTitle(context);
     if (toggleTitle.length > 0) {
         BOOL applies = SPKDirectManualSeenAppliesToSource(context);
-        UIImage *toggleImage = [SPKAssetUtils instagramIconNamed:applies ? @"eye_off" : @"eye" pointSize:22.0];
+        UIImage *toggleImage = [SPKAssetUtils menuIconNamed:applies ? @"eye_off" : @"eye"];
         UIAction *toggleAction = [UIAction actionWithTitle:toggleTitle
                                                      image:toggleImage
                                                 identifier:nil
@@ -404,7 +404,7 @@ static UIMenu *SPKDirectSeenButtonMenu(id source) {
         [children addObject:toggleAction];
     }
 
-    UIImage *logImage = [SPKAssetUtils instagramIconNamed:@"channels" pointSize:22.0];
+    UIImage *logImage = [SPKAssetUtils menuIconNamed:@"channels"];
     NSString *partnerPK = nil;
     NSString *partnerName = nil;
     SPKDirectResolveChatPartner(context, &partnerPK, &partnerName);
@@ -424,7 +424,7 @@ static UIMenu *SPKDirectSeenButtonMenu(id source) {
                                             }];
     [children addObject:logAction];
 
-    UIImage *settingsImage = [SPKAssetUtils instagramIconNamed:@"settings" pointSize:22.0];
+    UIImage *settingsImage = [SPKAssetUtils menuIconNamed:@"settings"];
     UIAction *settingsAction = [UIAction actionWithTitle:@"Messages Settings"
                                                    image:settingsImage
                                               identifier:nil

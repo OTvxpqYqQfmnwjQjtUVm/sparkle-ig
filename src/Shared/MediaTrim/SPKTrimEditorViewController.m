@@ -726,7 +726,7 @@ static NSString *SPKTrimFormatTime(NSTimeInterval seconds) {
             }
         }
         UIImage *image = iconName.length > 0
-                             ? [SPKAssetUtils instagramIconNamed:iconName pointSize:22.0]
+                             ? [SPKAssetUtils menuIconNamed:iconName]
                              : nil;
         UIAction *action = [UIAction actionWithTitle:title
                                                image:image

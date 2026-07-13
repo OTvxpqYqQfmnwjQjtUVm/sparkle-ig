@@ -415,7 +415,7 @@ typedef NS_ENUM(NSInteger, SPKPASortMode) {
 - (UIMenu *)moreMenu {
     __weak typeof(self) weakSelf = self;
     UIAction *refreshAvatars = [UIAction actionWithTitle:@"Refresh Profile Pictures"
-                                                   image:[SPKAssetUtils instagramIconNamed:@"user_circle" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                   image:[SPKAssetUtils menuIconNamed:@"user_circle"]
                                               identifier:nil
                                                  handler:^(__unused UIAction *action) {
                                                      [[SPKAvatarCache shared] purge];
@@ -427,7 +427,7 @@ typedef NS_ENUM(NSInteger, SPKPASortMode) {
     // Visited history is the only mutable-in-bulk list; offer a destructive clear.
     if (self.kind == SPKPAListKindVisited) {
         UIAction *clearHistory = [UIAction actionWithTitle:@"Clear History"
-                                                     image:[SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                     image:[SPKAssetUtils menuIconNamed:@"trash"]
                                                 identifier:nil
                                                    handler:^(__unused UIAction *action) {
                                                        [weakSelf confirmClearHistory];
@@ -865,7 +865,7 @@ static NSString *SPKPARelativeDate(NSDate *date) {
                                                                         [weakSelf removeVisit:visit];
                                                                         done(YES);
                                                                     }];
-    del.image = [SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    del.image = [SPKAssetUtils menuIconNamed:@"trash"];
     del.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
     del.accessibilityLabel = @"Remove";
     return [UISwipeActionsConfiguration configurationWithActions:@[ del ]];

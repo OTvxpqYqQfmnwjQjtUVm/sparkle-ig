@@ -40,12 +40,12 @@ static NSString *const kViewModeKey = @"gallery_view_mode"; // 0 = grid, 1 = lis
 static NSString *const kFavoritesAtTopKey = @"gallery_show_favorites_top";
 
 static CGFloat const kGridSpacing = 2.0;
-static CGFloat const kGalleryMenuIconPointSize = 22.0;
 static NSInteger const kSPKUINavigationItemSearchBarPlacementIntegratedButton = 4;
 
 static UIImage *SPKGalleryMenuActionIcon(NSString *resourceName) {
-    return [SPKAssetUtils instagramIconNamed:(resourceName.length > 0 ? resourceName : @"more")
-                                   pointSize:kGalleryMenuIconPointSize];
+    // menuIconNamed: avoids the UIGraphicsImageRenderer downscale that iOS 16's
+    // UIMenu renders blank for vector-backed (.svg) glyphs. See SPKAssetUtils.
+    return [SPKAssetUtils menuIconNamed:(resourceName.length > 0 ? resourceName : @"more")];
 }
 
 // Counts items in `folderPath` (including descendants). When `extraFilter` is

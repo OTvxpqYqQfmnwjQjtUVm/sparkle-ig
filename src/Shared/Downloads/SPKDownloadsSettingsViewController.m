@@ -23,7 +23,7 @@
     NSMutableArray<UICommand *> *commands = [NSMutableArray array];
     for (NSDictionary *item in items) {
         [commands addObject:[UICommand commandWithTitle:item[@"title"]
-                                                  image:[SPKAssetUtils instagramIconNamed:item[@"icon"] pointSize:22.0]
+                                                  image:[SPKAssetUtils menuIconNamed:item[@"icon"]]
                                                  action:@selector(menuChanged:)
                                            propertyList:@{@"defaultsKey" : @"downloads_audio_page_default_action", @"value" : item[@"value"], @"iconName" : item[@"icon"]}]];
     }

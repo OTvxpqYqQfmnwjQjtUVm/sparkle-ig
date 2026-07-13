@@ -783,7 +783,7 @@ static UIImage *SPKPhotoEditorMirror(UIImage *image, BOOL horizontal, BOOL verti
     for (SPKPhotoEditorDoneOption *option in self.configuration.doneOptions) {
         NSString *identifier = option.identifier;
         UIImage *image = option.iconName.length > 0
-                             ? [SPKAssetUtils instagramIconNamed:option.iconName pointSize:22.0]
+                             ? [SPKAssetUtils menuIconNamed:option.iconName]
                              : nil;
         UIAction *action = [UIAction actionWithTitle:option.title
                                                image:image
