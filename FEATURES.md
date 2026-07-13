@@ -413,6 +413,7 @@ clearing, and more.
 - **Show Settings on App Launch**.
 - **Disable All Settings**: Master kill switch; only Settings access remains. **(restart)**
 - **Show Onboarding**: Replays the first-run introduction sheet at any time.
+- **Show What's New**: Replays this release's What's New sheet at any time.
 - **Reset Safe Startup Mode**: Clears Sparkle's failed-launch counters and re-enables feature hooks after the launch failsafe kicked in.
 
 ### Settings Lock

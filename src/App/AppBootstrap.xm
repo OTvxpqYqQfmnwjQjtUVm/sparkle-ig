@@ -89,10 +89,8 @@ static void SPKScheduleStagedFeatureHooks(void) {
     double openDelay = [SPKUtils getBoolPref:@"tools_open_settings_on_launch"] ? 0.0 : 5.0;
 
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(openDelay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        if (
-            ![[[NSUserDefaults standardUserDefaults] objectForKey:@"app_first_run"] isEqualToString:SPKVersionString] || [SPKUtils getBoolPref:@"tools_open_settings_on_launch"]) {
-            SPKLog(@"Bootstrap", @"First run, initializing");
-            SPKLog(@"Bootstrap", @"Displaying Sparkle first-time settings modal");
+        if (SPKCoreOnboardingPending() || SPKCoreWhatsNewPending() || [SPKUtils getBoolPref:@"tools_open_settings_on_launch"]) {
+            SPKLog(@"Bootstrap", @"Intro sheet pending or launch-open enabled; presenting settings");
             SPKCoreShowSettingsIfNeeded([self window]);
         }
     });

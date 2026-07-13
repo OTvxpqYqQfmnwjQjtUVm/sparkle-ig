@@ -8,8 +8,10 @@
 #import "../Shared/UI/SPKIGAlertPresenter.h"
 #import "../Shared/UI/SPKMediaChrome.h"
 #import "../Shared/UI/SPKSwitch.h"
+#import "../App/SPKCore.h"
 #import "SPKOnboardingViewController.h"
 #import "SPKPreferenceAvailability.h"
+#import "SPKWhatsNewViewController.h"
 
 static char rowStaticRef[] = "row";
 static CGFloat const kSPKSettingsRemoteImageSize = 45.0;
@@ -361,31 +363,69 @@ static UIImage *SPKSettingsBreadcrumbChevronImage(void) {
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
-    [self presentOnboardingIfNeeded];
+    [self presentIntroSheetsIfNeeded];
 }
 
-// First-run onboarding: a multi-step intro shown the first time the user opens
-// Sparkle settings. Only the root settings page presents it (sub-topic pages are
-// also SPKSettingsViewControllers pushed onto the same stack), and only once per
-// process — the `app_first_run` default is stamped (with SPKVersionString) when
-// onboarding finishes so it won't reappear until that version string changes. Bump
-// SPKVersionString on a release to re-show onboarding to everyone once. The Tools
-// "Show Onboarding" button replays it directly without touching first-run state.
-- (void)presentOnboardingIfNeeded {
+// Intro sheets shown when the user opens Sparkle settings. Only the root settings
+// page presents them (sub-topic pages are also SPKSettingsViewControllers pushed
+// onto the same stack), and at most one flow per process:
+//   - Milestone release (SPKVersionString == SPKForcedOnboardingVersion), notes
+//     unseen → replay onboarding for *everyone*, then chain into What's New. A
+//     one-time redesign moment for fresh installs and updaters alike.
+//   - Otherwise, first-ever run (`app_first_run` never stamped) → onboarding only.
+//     On finish it stamps both keys so a fresh install doesn't also get What's New.
+//   - Otherwise, already onboarded but a new version's notes are unseen (including
+//     upgraders who predate the feature) → What's New only.
+// Gating predicates live in SPKCore so the launch-time auto-open agrees. The Tools
+// "Show Onboarding" / "Show What's New" buttons replay each directly without
+// touching this state (onFinish is nil).
+- (void)presentIntroSheetsIfNeeded {
     if (self.didAttemptOnboarding)
         return;
     if (self.navigationController.viewControllers.firstObject != self)
-        return;
-    if ([[[NSUserDefaults standardUserDefaults] objectForKey:@"app_first_run"] isEqualToString:SPKVersionString])
         return;
     if (self.presentedViewController)
         return;
 
     self.didAttemptOnboarding = YES;
 
-    [SPKOnboardingViewController presentFromViewController:self onFinish:^{
-        [[NSUserDefaults standardUserDefaults] setValue:SPKVersionString forKey:@"app_first_run"];
-    }];
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    id lastWhatsNew = [defaults objectForKey:@"app_last_whatsnew_version"];
+    BOOL whatsNewSeen = [lastWhatsNew isKindOfClass:[NSString class]] && [lastWhatsNew isEqualToString:SPKVersionString];
+    BOOL milestone = [SPKVersionString isEqualToString:SPKForcedOnboardingVersion];
+
+    if (milestone && !whatsNewSeen) {
+        // Everyone sees the redesigned onboarding once, then hands off to What's New
+        // via its final CTA ("Show What's New") rather than an abrupt second modal.
+        __weak typeof(self) weakSelf = self;
+        SPKOnboardingViewController *onboarding = [SPKOnboardingViewController new];
+        onboarding.overrideUserInterfaceStyle = self.overrideUserInterfaceStyle;
+        onboarding.finishTitleOverride = @"Show What's New";
+        onboarding.onFinish = ^{
+            [defaults setValue:SPKVersionString forKey:@"app_first_run"];
+            // Deliberately don't stamp What's New here — chain into it; its own finish
+            // stamps the version and closes the flow.
+            [SPKWhatsNewViewController presentFromViewController:weakSelf onFinish:^{
+                [defaults setValue:SPKVersionString forKey:@"app_last_whatsnew_version"];
+            }];
+        };
+        [self presentViewController:onboarding animated:YES completion:nil];
+        return;
+    }
+
+    if (SPKCoreOnboardingPending()) {
+        [SPKOnboardingViewController presentFromViewController:self onFinish:^{
+            [defaults setValue:SPKVersionString forKey:@"app_first_run"];
+            [defaults setValue:SPKVersionString forKey:@"app_last_whatsnew_version"];
+        }];
+        return;
+    }
+
+    if (SPKCoreWhatsNewPending()) {
+        [SPKWhatsNewViewController presentFromViewController:self onFinish:^{
+            [defaults setValue:SPKVersionString forKey:@"app_last_whatsnew_version"];
+        }];
+    }
 }
 
 - (void)setupNavigationItems {

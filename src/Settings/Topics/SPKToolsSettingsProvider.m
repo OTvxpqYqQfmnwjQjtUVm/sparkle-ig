@@ -9,6 +9,7 @@
 #import "../../Shared/UI/SPKIGAlertPresenter.h"
 #import "../../Utils.h"
 #import "../SPKOnboardingViewController.h"
+#import "../SPKWhatsNewViewController.h"
 #import "../SPKSettingsViewController.h"
 #import "../SPKTopicSettingsSupport.h"
 #import "SPKInterfaceSettingsProvider.h"
@@ -133,6 +134,19 @@ static NSDictionary *SPKSettingsLockSection(void) {
                                      action:^(void) {
                                          [SPKOnboardingViewController presentFromViewController:nil onFinish:nil];
                                      }],
+            [SPKSetting buttonCellWithTitle:@"Show What's New"
+                                   subtitle:@""
+                                       icon:nil
+                                     action:^(void) {
+                                         [SPKWhatsNewViewController presentFromViewController:nil onFinish:nil];
+                                     }],
+        ],
+                        @"1. Opens settings when long pressing the Home tab or the next visible tab if the Home tab is hidden.\n"
+                        @"2. Haptic feedback when the settings shortcut gesture fires.\n"
+                        @"3. Open Sparkle settings automatically every time Instagram launches.\n"
+                        @"4. Suppress every Sparkle feature hook, leaving only the shortcut to reach this screen. Use to isolate crashes."),
+
+        SPKTopicSection(@"", @[
             [SPKSetting buttonCellWithTitle:@"Reset Safe Startup Mode"
                                    subtitle:@""
                                        icon:nil
@@ -140,13 +154,20 @@ static NSDictionary *SPKSettingsLockSection(void) {
                                          SPKStabilityGuardReset();
                                          [SPKUtils showRestartConfirmation];
                                      }],
-        ],
-                        @"1. Quick Settings Access opens settings when long pressing the Home tab or the next visible tab if the Home tab is hidden.\n"
-                        @"2. Play a haptic tap when the settings shortcut gesture fires.\n"
-                        @"3. Open Sparkle settings automatically every time Instagram launches.\n"
-                        @"4. Suppress every Sparkle feature hook, leaving only the shortcut to reach this screen. Use to isolate crashes.\n"
-                        @"5. Replay the first-run introduction sheet at any time.\n"
-                        @"6. Reset Safe Startup Mode clears failed-launch counters and temporary hook suppression."),
+#if SPK_DEV
+            // Dev builds only: wipe the intro-sheet state so the onboarding /
+            // What's New gating fires from scratch on the next launch.
+            [SPKSetting buttonCellWithTitle:@"[DEV] Reset Intro State"
+                                   subtitle:@""
+                                       icon:nil
+                                     action:^(void) {
+                                         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+                                         [defaults removeObjectForKey:@"app_first_run"];
+                                         [defaults removeObjectForKey:@"app_last_whatsnew_version"];
+                                         [SPKUtils showRestartConfirmation];
+                                     }],
+#endif
+        ], @"Clears failed-launch counters and temporary hook suppression. Tap this button if it appears as if features aren't enabled."),
         SPKSettingsLockSection(),
     ]];
 

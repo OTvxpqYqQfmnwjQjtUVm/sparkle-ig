@@ -27,6 +27,8 @@ endif
 ifneq ($(DEV),1)
 $(TWEAK_NAME)_CFLAGS += -O2 -DNDEBUG
 $(TWEAK_NAME)_LDFLAGS += -Wl,-S
+else
+$(TWEAK_NAME)_CFLAGS += -DSPK_DEV=1
 endif
 
 $(TWEAK_NAME)_CXXFLAGS += -std=c++11

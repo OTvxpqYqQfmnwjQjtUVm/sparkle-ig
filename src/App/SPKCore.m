@@ -279,3 +279,20 @@ void SPKCoreShowSettingsIfNeeded(UIWindow *window) {
     SPKCoreRegisterDefaults();
     [SPKUtils showSettingsVC:window];
 }
+
+BOOL SPKCoreOnboardingPending(void) {
+    // Never stamped == never onboarded. Once stamped it stays put across version
+    // bumps, so onboarding is a one-time, first-ever-run event.
+    return [[NSUserDefaults standardUserDefaults] objectForKey:@"app_first_run"] == nil;
+}
+
+BOOL SPKCoreWhatsNewPending(void) {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    // A brand-new user sees onboarding, not What's New (onboarding stamps both).
+    if ([defaults objectForKey:@"app_first_run"] == nil)
+        return NO;
+    // Show once per version. A missing key means an upgrader who predates the
+    // feature — they should see it too, so treat that as pending.
+    id lastSeen = [defaults objectForKey:@"app_last_whatsnew_version"];
+    return ![lastSeen isKindOfClass:[NSString class]] || ![lastSeen isEqualToString:SPKVersionString];
+}
