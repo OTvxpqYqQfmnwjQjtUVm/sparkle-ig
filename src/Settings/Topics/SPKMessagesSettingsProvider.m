@@ -160,7 +160,7 @@ static NSArray *SPKMessagesSettingsSections(void) {
             [SPKSetting switchCellWithTitle:@"Respect Seen Chat List"
                                        icon:SPKSettingsIcon(@"eye")
                                 defaultsKey:@"msgs_deleted_log_respect_seen_list"],
-            [SPKSetting navigationCellWithTitle:@"Deleted Messages Logs"
+            [SPKSetting navigationCellWithTitle:@"View Deleted Messages"
                                        subtitle:@""
                                            icon:SPKSettingsIcon(@"channels")
                                  viewController:[SPKDeletedMessagesViewController new]],
