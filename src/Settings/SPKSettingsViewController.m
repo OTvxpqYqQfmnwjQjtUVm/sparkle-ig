@@ -369,11 +369,8 @@ static UIImage *SPKSettingsBreadcrumbChevronImage(void) {
 // Intro sheets shown when the user opens Sparkle settings. Only the root settings
 // page presents them (sub-topic pages are also SPKSettingsViewControllers pushed
 // onto the same stack), and at most one flow per process:
-//   - Milestone release (SPKVersionString == SPKForcedOnboardingVersion), notes
-//     unseen → replay onboarding for *everyone*, then chain into What's New. A
-//     one-time redesign moment for fresh installs and updaters alike.
-//   - Otherwise, first-ever run (`app_first_run` never stamped) → onboarding only.
-//     On finish it stamps both keys so a fresh install doesn't also get What's New.
+//   - First-ever run (`app_first_run` never stamped) → onboarding only. On finish
+//     it stamps both keys so a fresh install doesn't also get What's New.
 //   - Otherwise, already onboarded but a new version's notes are unseen (including
 //     upgraders who predate the feature) → What's New only.
 // Gating predicates live in SPKCore so the launch-time auto-open agrees. The Tools
@@ -390,28 +387,6 @@ static UIImage *SPKSettingsBreadcrumbChevronImage(void) {
     self.didAttemptOnboarding = YES;
 
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
-    id lastWhatsNew = [defaults objectForKey:@"app_last_whatsnew_version"];
-    BOOL whatsNewSeen = [lastWhatsNew isKindOfClass:[NSString class]] && [lastWhatsNew isEqualToString:SPKVersionString];
-    BOOL milestone = [SPKVersionString isEqualToString:SPKForcedOnboardingVersion];
-
-    if (milestone && !whatsNewSeen) {
-        // Everyone sees the redesigned onboarding once, then hands off to What's New
-        // via its final CTA ("Show What's New") rather than an abrupt second modal.
-        __weak typeof(self) weakSelf = self;
-        SPKOnboardingViewController *onboarding = [SPKOnboardingViewController new];
-        onboarding.overrideUserInterfaceStyle = self.overrideUserInterfaceStyle;
-        onboarding.finishTitleOverride = @"Show What's New";
-        onboarding.onFinish = ^{
-            [defaults setValue:SPKVersionString forKey:@"app_first_run"];
-            // Deliberately don't stamp What's New here — chain into it; its own finish
-            // stamps the version and closes the flow.
-            [SPKWhatsNewViewController presentFromViewController:weakSelf onFinish:^{
-                [defaults setValue:SPKVersionString forKey:@"app_last_whatsnew_version"];
-            }];
-        };
-        [self presentViewController:onboarding animated:YES completion:nil];
-        return;
-    }
 
     if (SPKCoreOnboardingPending()) {
         [SPKOnboardingViewController presentFromViewController:self onFinish:^{
