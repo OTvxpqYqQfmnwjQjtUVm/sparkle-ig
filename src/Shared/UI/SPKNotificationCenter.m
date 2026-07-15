@@ -79,6 +79,10 @@ NSString *const kSPKNotificationPillPositionKey = @"notifs_pill_position";
 
 static CGFloat const kSPKNotificationStackSpacing = 8.0;
 static CGFloat const kSPKNotificationTopMargin = 8.0;
+// Bottom pills clear the safe-area bottom, but IG stacks a tab bar / composer /
+// toolbar above it that the safe area doesn't cover. Lift bottom pills further so
+// they float clear of that chrome instead of overlapping it.
+static CGFloat const kSPKNotificationBottomMargin = 60.0;
 static NSTimeInterval const kSPKNotificationInsertDuration = 0.55;
 static NSTimeInterval const kSPKNotificationDefaultPillDuration = 1.5;
 static NSTimeInterval const kSPKNotificationMinPillDuration = 0.5;
@@ -476,7 +480,8 @@ static BOOL SPKManualSeenSettingsUIVisible(void) {
 }
 
 - (CGFloat)offsetForIndex:(NSUInteger)index {
-    CGFloat offset = kSPKNotificationTopMargin;
+    BOOL isBottom = [[SPKUtils getStringPref:kSPKNotificationPillPositionKey] isEqualToString:@"bottom"];
+    CGFloat offset = isBottom ? kSPKNotificationBottomMargin : kSPKNotificationTopMargin;
     for (NSUInteger i = 0; i < index && i < self.visible.count; i++) {
         SPKNotificationPillView *pill = self.visible[i].pill;
         CGFloat height = CGRectGetHeight(pill.bounds);

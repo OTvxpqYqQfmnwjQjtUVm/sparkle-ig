@@ -253,8 +253,8 @@ static SPKDeletedMessageKind SPKDMChipKindForIndex(NSInteger index) {
 
         [self.emptyStateIcon.topAnchor constraintEqualToAnchor:self.emptyStateView.topAnchor],
         [self.emptyStateIcon.centerXAnchor constraintEqualToAnchor:self.emptyStateView.centerXAnchor],
-        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:72.0],
-        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:72.0],
+        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:96.0],
+        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:96.0],
 
         [self.emptyStateTitle.topAnchor constraintEqualToAnchor:self.emptyStateIcon.bottomAnchor
                                                        constant:18.0],
@@ -442,14 +442,14 @@ static SPKDeletedMessageKind SPKDMChipKindForIndex(NSInteger index) {
     __weak typeof(self) weakSelf = self;
 
     UIAction *storageAction = [UIAction actionWithTitle:@"Storage"
-                                                  image:[SPKAssetUtils instagramIconNamed:@"info" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                  image:[SPKAssetUtils menuIconNamed:@"info"]
                                              identifier:nil
                                                 handler:^(__unused UIAction *a) {
                                                     [weakSelf.navigationController pushViewController:[SPKDeletedMessagesStorageViewController new] animated:YES];
                                                 }];
 
     UIAction *refreshAvatarsAction = [UIAction actionWithTitle:@"Refresh Profile Pictures"
-                                                         image:[SPKAssetUtils instagramIconNamed:@"user_circle" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                         image:[SPKAssetUtils menuIconNamed:@"user_circle"]
                                                     identifier:nil
                                                        handler:^(__unused UIAction *a) {
                                                            [[SPKAvatarCache shared] purge];
@@ -457,7 +457,7 @@ static SPKDeletedMessageKind SPKDMChipKindForIndex(NSInteger index) {
                                                        }];
 
     UIAction *clearFiltersAction = [UIAction actionWithTitle:@"Clear Filters"
-                                                       image:[SPKAssetUtils instagramIconNamed:@"filter" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                       image:[SPKAssetUtils menuIconNamed:@"filter"]
                                                   identifier:nil
                                                      handler:^(__unused UIAction *a) {
                                                          weakSelf.filter = [SPKDeletedMessagesFilter new];
@@ -467,7 +467,7 @@ static SPKDeletedMessageKind SPKDMChipKindForIndex(NSInteger index) {
                                                      }];
 
     UIAction *clearAllAction = [UIAction actionWithTitle:@"Clear All Messages"
-                                                   image:[SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                   image:[SPKAssetUtils menuIconNamed:@"trash"]
                                               identifier:nil
                                                  handler:^(__unused UIAction *a) {
                                                      [weakSelf confirmClearAll];
@@ -544,7 +544,7 @@ static SPKDeletedMessageKind SPKDMChipKindForIndex(NSInteger index) {
                                                                               [SPKDeletedMessagesStorage setSenderPinned:!group.isPinned senderPK:group.flagKey ownerPK:self.ownerPK];
                                                                               completionHandler(YES);
                                                                           }];
-    pinAction.image = [SPKAssetUtils instagramIconNamed:(group.isPinned ? @"pin_filled" : @"pin") pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    pinAction.image = [SPKAssetUtils menuIconNamed:(group.isPinned ? @"pin_filled" : @"pin")];
     pinAction.backgroundColor = [SPKUtils SPKColor_InstagramBlue];
     pinAction.accessibilityLabel = group.isPinned ? @"Unpin" : @"Pin";
     UIContextualAction *blockAction = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleNormal
@@ -553,7 +553,7 @@ static SPKDeletedMessageKind SPKDMChipKindForIndex(NSInteger index) {
                                                                                 [SPKDeletedMessagesStorage setSenderBlocked:!group.isBlocked senderPK:group.flagKey ownerPK:self.ownerPK];
                                                                                 completionHandler(YES);
                                                                             }];
-    blockAction.image = [SPKAssetUtils instagramIconNamed:(group.isBlocked ? @"circle" : @"circle_off") pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    blockAction.image = [SPKAssetUtils menuIconNamed:(group.isBlocked ? @"circle" : @"circle_off")];
     blockAction.backgroundColor = [SPKUtils SPKColor_InstagramSecondaryText];
     blockAction.accessibilityLabel = group.isBlocked ? @"Unblock" : @"Block";
     UIContextualAction *deleteAction = [UIContextualAction contextualActionWithStyle:UIContextualActionStyleDestructive
@@ -562,7 +562,7 @@ static SPKDeletedMessageKind SPKDMChipKindForIndex(NSInteger index) {
                                                                                  [self confirmDeleteGroup:group];
                                                                                  completionHandler(NO);
                                                                              }];
-    deleteAction.image = [SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    deleteAction.image = [SPKAssetUtils menuIconNamed:@"trash"];
     deleteAction.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
     deleteAction.accessibilityLabel = @"Delete";
     return [UISwipeActionsConfiguration configurationWithActions:@[ deleteAction, blockAction, pinAction ]];

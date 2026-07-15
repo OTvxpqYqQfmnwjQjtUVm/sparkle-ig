@@ -61,7 +61,9 @@ static NSString *SPKCommentStringForSelector(id object, NSString *selectorName) 
 }
 
 static UIImage *SPKCommentIcon(NSString *name) {
-    return [SPKAssetUtils instagramIconNamed:name pointSize:24.0];
+    // menuIconNamed: avoids the UIGraphicsImageRenderer downscale that iOS 16's
+    // UIMenu renders blank for vector-backed (.svg) glyphs. See SPKAssetUtils.
+    return [SPKAssetUtils menuIconNamed:name];
 }
 
 static id SPKCommentLongPressedComment(id controller) {

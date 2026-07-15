@@ -59,21 +59,43 @@
     return CGSizeMake(UIViewNoIntrinsicMetric, 50);
 }
 
-- (void)setDistributesToFit:(BOOL)distributesToFit {
-    if (_distributesToFit == distributesToFit && self.fitWidthConstraint)
-        return;
-    _distributesToFit = distributesToFit;
-    self.scroll.scrollEnabled = !distributesToFit;
-    self.stack.distribution = distributesToFit ? UIStackViewDistributionFillEqually
-                                               : UIStackViewDistributionFill;
+- (void)ensureFitWidthConstraint {
     if (!self.fitWidthConstraint) {
         // Fill the visible width minus the scroll's symmetric content inset, so
-        // the equally-distributed chips span the bar without scrolling.
+        // the distributed chips span the bar without scrolling.
         self.fitWidthConstraint = [self.stack.widthAnchor
             constraintEqualToAnchor:self.scroll.frameLayoutGuide.widthAnchor
                            constant:-(self.scroll.contentInset.left + self.scroll.contentInset.right)];
     }
-    self.fitWidthConstraint.active = distributesToFit;
+}
+
+// Applies whichever fill mode is set. Both fill modes disable scrolling and pin
+// the stack to the bar width; only the stack distribution differs.
+- (void)applyDistributionMode {
+    BOOL fills = _distributesToFit || _distributesProportionally;
+    self.scroll.scrollEnabled = !fills;
+    if (_distributesProportionally)
+        self.stack.distribution = UIStackViewDistributionFillProportionally;
+    else if (_distributesToFit)
+        self.stack.distribution = UIStackViewDistributionFillEqually;
+    else
+        self.stack.distribution = UIStackViewDistributionFill;
+    [self ensureFitWidthConstraint];
+    self.fitWidthConstraint.active = fills;
+}
+
+- (void)setDistributesToFit:(BOOL)distributesToFit {
+    _distributesToFit = distributesToFit;
+    if (distributesToFit)
+        _distributesProportionally = NO;
+    [self applyDistributionMode];
+}
+
+- (void)setDistributesProportionally:(BOOL)distributesProportionally {
+    _distributesProportionally = distributesProportionally;
+    if (distributesProportionally)
+        _distributesToFit = NO;
+    [self applyDistributionMode];
 }
 
 // Full-size font/icons at all times; on narrow screens the fill-mode chips let
@@ -104,10 +126,13 @@
         NSString *sym = (i < (NSInteger)symbols.count) ? symbols[i] : nil;
         UIButton *c = [UIButton buttonWithType:UIButtonTypeSystem];
         c.titleLabel.font = [UIFont systemFontOfSize:[self chipFontSize] weight:UIFontWeightSemibold];
-        // In fill mode the chips share the width, so let a long label shrink a
-        // touch rather than truncate.
-        c.titleLabel.adjustsFontSizeToFitWidth = self.distributesToFit;
-        c.titleLabel.minimumScaleFactor = self.distributesToFit ? 0.7 : 1.0;
+        // In a fill mode a label may not fit its share, so allow a touch of
+        // shrink rather than truncating. Equal-fill needs more room (0.7);
+        // proportional sizes chips to content so it only needs a small safety
+        // floor (0.85) for the narrowest screens.
+        BOOL fills = self.distributesToFit || self.distributesProportionally;
+        c.titleLabel.adjustsFontSizeToFitWidth = fills;
+        c.titleLabel.minimumScaleFactor = self.distributesToFit ? 0.7 : (self.distributesProportionally ? 0.85 : 1.0);
         c.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         [c setTitle:titles[i] forState:UIControlStateNormal];
         if (sym.length) {

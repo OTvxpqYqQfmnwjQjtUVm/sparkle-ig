@@ -143,44 +143,67 @@ static SPKSetting *SPKHideTabSwitch(NSString *title, NSString *iconName, NSStrin
     ]];
 
     {
-        BOOL liquidGlassAvailable = SPKPrefIsAvailable(kSPKPrefInterfaceLiquidGlass);
-        SPKSetting *liquidGlass = [SPKSetting switchCellWithTitle:@"Liquid Glass"
-                                                         subtitle:liquidGlassAvailable ? @"" : @"Requires iOS 26 or later"
-                                                      defaultsKey:kSPKPrefInterfaceLiquidGlass
-                                                  requiresRestart:YES];
-        liquidGlass.switchValueProvider = ^BOOL {
-            return [SPKUtils getBoolPref:kSPKPrefInterfaceLiquidGlass];
+        // Tab Bar Behavior is shared by both presentations: it configures the
+        // scroll behavior of the (pill/glass) tab bar and is enabled whenever
+        // the Liquid Glass pref is on.
+        SPKSetting *(^tabBarBehaviorCell)(void) = ^SPKSetting * {
+            SPKSetting *tabBarBehavior = [SPKSetting menuCellWithTitle:@"Tab Bar Behavior"
+                                                                  icon:nil
+                                                                  menu:SPKLiquidGlassTabBarStateMenu()];
+            tabBarBehavior.defaultsKey = kSPKPrefInterfaceLiquidGlassTabBarMode;
+            tabBarBehavior.enabledProvider = ^BOOL {
+                return [SPKUtils getBoolPref:kSPKPrefInterfaceLiquidGlass];
+            };
+            return tabBarBehavior;
         };
-        liquidGlass.switchChangeHandler = ^(BOOL isOn) {
-            if (!SPKPrefIsAvailable(kSPKPrefInterfaceLiquidGlass))
-                return;
-            [[NSUserDefaults standardUserDefaults] setBool:isOn forKey:kSPKPrefInterfaceLiquidGlass];
-            [SPKUtils showRestartConfirmation];
-        };
-        SPKSetting *progressiveBlur = [SPKSetting switchCellWithTitle:@"Progressive Blur"
-                                                             subtitle:liquidGlassAvailable ? @"" : @"Requires iOS 26 or later"
-                                                          defaultsKey:kSPKPrefInterfaceProgressiveBlur
-                                                      requiresRestart:YES];
-        SPKSetting *tabBarBehavior = [SPKSetting menuCellWithTitle:@"Tab Bar Behavior"
-                                                              icon:nil
-                                                              menu:SPKLiquidGlassTabBarStateMenu()];
-        tabBarBehavior.defaultsKey = kSPKPrefInterfaceLiquidGlassTabBarMode;
-        tabBarBehavior.enabledProvider = ^BOOL {
-            return [SPKUtils getBoolPref:kSPKPrefInterfaceLiquidGlass];
-        };
-        if (!liquidGlassAvailable) {
-            liquidGlass.userInfo = @{@"enabled" : @NO};
-            progressiveBlur.userInfo = @{@"enabled" : @NO};
-        }
 
-        [sections addObject:SPKTopicSection(@"Liquid Glass & Blur", @[
-                      liquidGlass,
-                      progressiveBlur,
-                      tabBarBehavior,
-                  ],
-                                            @"1. Force-enable Instagram's native Liquid Glass UI.\n"
-                                            @"2. Restore the native progressive navigation bar blur on scroll.\n"
-                                            @"3. Configure how the tab bar behaves while scrolling.")];
+        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"26.0")) {
+            // Full Liquid Glass: real glass material, progressive blur, tab bar.
+            SPKSetting *liquidGlass = [SPKSetting switchCellWithTitle:@"Liquid Glass"
+                                                          defaultsKey:kSPKPrefInterfaceLiquidGlass
+                                                      requiresRestart:YES];
+            liquidGlass.switchValueProvider = ^BOOL {
+                return [SPKUtils getBoolPref:kSPKPrefInterfaceLiquidGlass];
+            };
+            liquidGlass.switchChangeHandler = ^(BOOL isOn) {
+                [[NSUserDefaults standardUserDefaults] setBool:isOn forKey:kSPKPrefInterfaceLiquidGlass];
+                [SPKUtils showRestartConfirmation];
+            };
+            SPKSetting *progressiveBlur = [SPKSetting switchCellWithTitle:@"Progressive Blur"
+                                                             defaultsKey:kSPKPrefInterfaceProgressiveBlur
+                                                          requiresRestart:YES];
+
+            [sections addObject:SPKTopicSection(@"Liquid Glass & Blur", @[
+                          liquidGlass,
+                          progressiveBlur,
+                          tabBarBehaviorCell(),
+                      ],
+                                                @"1. Force-enable Instagram's native Liquid Glass UI.\n"
+                                                @"2. Restore the native progressive navigation bar blur on scroll.\n"
+                                                @"3. Configure how the tab bar behaves while scrolling.")];
+        } else {
+            // Pre-iOS 26 can't render the glass material, but the same tab bar
+            // experiment gates still reshape the bar into the floating pill.
+            // Expose that as a focused toggle sharing the Liquid Glass pref.
+            SPKSetting *pillTabBar = [SPKSetting switchCellWithTitle:@"Pill-Shaped Tab Bar"
+                                                        defaultsKey:kSPKPrefInterfaceLiquidGlass
+                                                    requiresRestart:YES];
+            pillTabBar.switchValueProvider = ^BOOL {
+                return [SPKUtils getBoolPref:kSPKPrefInterfaceLiquidGlass];
+            };
+            pillTabBar.switchChangeHandler = ^(BOOL isOn) {
+                [[NSUserDefaults standardUserDefaults] setBool:isOn forKey:kSPKPrefInterfaceLiquidGlass];
+                [SPKUtils showRestartConfirmation];
+            };
+
+            [sections addObject:SPKTopicSection(@"Tab Bar", @[
+                          pillTabBar,
+                          tabBarBehaviorCell(),
+                      ],
+                                                @"Reshape the tab bar into the iOS 26-style floating pill. "
+                                                @"The Liquid Glass material itself requires iOS 26, so on this "
+                                                @"device only the pill shape is applied.")];
+        }
     }
 
     return SPKTopicNavigationSetting(@"Interface", @"interface", 24.0, sections);

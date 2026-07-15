@@ -26,6 +26,7 @@ static NSDictionary *SPKBootstrapDefaults(void) {
         @"interface_hide_profile_tab" : @(NO),
         @"interface_open_clipboard_link" : @(YES),
         @"tools_settings_shortcut" : @(YES),
+        @"tools_shortcut_haptics" : @(YES),
         @"gallery_quick_access_tab" : @"direct-inbox-tab",
         @"tools_open_settings_on_launch" : @(NO),
         @"tools_disable_all" : @(NO),
@@ -40,7 +41,11 @@ static NSDictionary *SPKFeatureDefaults(void) {
         @"general_copy_text" : @(NO),
         @"stories_detailed_color_picker" : @(NO),
         @"msgs_disable_screenshot_detection" : @(YES),
+#if SPK_SIDELOAD
+        @"tools_hide_testflight_popup" : @(YES),
+#else
         @"tools_hide_testflight_popup" : @(NO),
+#endif
         @"tools_fix_duplicate_notifications" : @(NO),
         @"general_hold_send_copy_link" : @(YES),
         @"stories_mark_seen_on_like" : @(NO),
@@ -68,28 +73,47 @@ static NSDictionary *SPKFeatureDefaults(void) {
         @"msgs_deleted_log_respect_seen_list" : @(NO),
         @"profile_photo_zoom" : @(NO),
         @"profile_follow_indicator" : @(NO),
+        // The mode (`profile_follow_indicator_mode`) and colorful
+        // (`profile_follow_indicator_colorful`) keys are intentionally left
+        // unregistered so FollowIndicator.x can fall back to the legacy bool
+        // above for pre-mode-menu users (→ text + colorful). Everyone else
+        // defaults to off / native gray.
         @"profile_analyzer_track_visits" : @(NO),
-        @"feed_action_btn" : @(NO),
+        @"feed_action_btn" : @(YES),
         @"feed_action_btn_default_action" : @"none",
+        @"feed_header_button" : @(NO),
+        @"feed_header_button_default" : @"menu",
+        @"feed_header_button_dest_gallery" : @(YES),
+        @"feed_header_button_dest_analyzer" : @(YES),
+        @"feed_header_button_dest_deleted" : @(YES),
+        @"feed_header_button_dest_downloads" : @(YES),
+        @"feed_header_button_dest_settings" : @(YES),
         @"general_action_btn_default_menu_icon" : @"action",
-        @"reels_action_btn" : @(NO),
+        @"reels_action_btn" : @(YES),
         @"reels_action_btn_default_action" : @"none",
-        @"stories_action_btn" : @(NO),
+        @"stories_action_btn" : @(YES),
         @"stories_action_btn_default_action" : @"none",
-        @"msgs_action_btn" : @(NO),
+        @"msgs_action_btn" : @(YES),
+        @"msgs_action_btn_chat_media" : @(NO),
         @"msgs_action_btn_default_action" : @"none",
-        @"profile_action_btn" : @(NO),
+        @"profile_action_btn" : @(YES),
         @"profile_action_btn_default_action" : @"none",
         @"feed_long_press_expand" : @(NO),
         @"feed_expanded_vid_start_muted" : @(NO),
+        @"general_preview_show_metadata" : @(YES),
+        @"gallery_preview_show_metadata" : @(YES),
         @"stories_hide_join_trending" : @(NO),
         @"stories_mentions_btn" : @(NO),
+        @"stories_unlock_preview" : @(NO),
+        @"stories_hide_ig_plus_button" : @(NO),
+        @"stories_search_viewer_list" : @(NO),
+        @"feed_disable_appicon_gesture" : @(NO),
         @"reels_tap_control" : @"default",
         @"instants_disable_creation" : @(YES),
         @"instants_confirm_capture" : @(NO),
         @"instants_disable_camera_control" : @(NO),
         @"instants_skip_camera_after_viewing" : @(NO),
-        @"instants_action_btn" : @(NO),
+        @"instants_action_btn" : @(YES),
         @"instants_action_btn_default_action" : @"none",
         @"instants_allow_screenshot" : @(NO),
         @"instants_confirm_reaction" : @(NO),
@@ -100,7 +124,7 @@ static NSDictionary *SPKFeatureDefaults(void) {
         @"reels_doom_scroll_limit" : @(1),
         @"feed_disable_bg_refresh" : @(NO),
         @"general_cache_auto_clear" : @"never",
-        @"downloads_enhanced_media_resolution" : @(NO),
+        @"downloads_enhanced_media_resolution" : @(YES),
         @"downloads_detect_duplicates" : @(YES),
         @"downloads_max_concurrent" : @(2),
         @"downloads_history_limit" : @(100),
@@ -109,8 +133,8 @@ static NSDictionary *SPKFeatureDefaults(void) {
         @"general_hide_ads_reels" : @(YES),
         @"general_hide_ads_explore" : @(YES),
         @"general_comments_swipe_close_direction" : @"both",
-        @"general_comments_copy_text" : @(NO),
-        @"general_comments_media_actions" : @(NO),
+        @"general_comments_copy_text" : @(YES),
+        @"general_comments_media_actions" : @(YES),
         @"general_comments_hide_shopping" : @(NO),
         @"general_comments_hide_gifts_button" : @(NO),
         @"general_comments_gallery_upload" : @(NO),
@@ -164,6 +188,9 @@ static NSDictionary *SPKFeatureDefaults(void) {
         @"msgs_seen_on_send" : @(NO),
         @"msgs_seen_on_reply" : @(NO),
         @"msgs_seen_on_reaction" : @(NO),
+        @"msgs_seen_on_typing" : @(NO),
+        @"msgs_seen_button_position" : @"top",
+        @"msgs_last_active_format" : @"off",
         @"feed_confirm_repost" : @(NO),
         @"reels_confirm_repost" : @(NO),
         @"feed_hide_repost_btn" : @(NO),
@@ -251,4 +278,21 @@ void SPKCoreInstallSurfaceHooks(SPKSurface surface) {
 void SPKCoreShowSettingsIfNeeded(UIWindow *window) {
     SPKCoreRegisterDefaults();
     [SPKUtils showSettingsVC:window];
+}
+
+BOOL SPKCoreOnboardingPending(void) {
+    // Never stamped == never onboarded. Once stamped it stays put across version
+    // bumps, so onboarding is a one-time, first-ever-run event.
+    return [[NSUserDefaults standardUserDefaults] objectForKey:@"app_first_run"] == nil;
+}
+
+BOOL SPKCoreWhatsNewPending(void) {
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    // A brand-new user sees onboarding, not What's New (onboarding stamps both).
+    if ([defaults objectForKey:@"app_first_run"] == nil)
+        return NO;
+    // Show once per version. A missing key means an upgrader who predates the
+    // feature — they should see it too, so treat that as pending.
+    id lastSeen = [defaults objectForKey:@"app_last_whatsnew_version"];
+    return ![lastSeen isKindOfClass:[NSString class]] || ![lastSeen isEqualToString:SPKVersionString];
 }

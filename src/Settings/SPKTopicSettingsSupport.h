@@ -17,6 +17,8 @@ SPKSetting *SPKActionButtonDefaultActionNavigationSetting(SPKActionButtonSource 
 SPKSetting *SPKActionButtonConfigurationNavigationSetting(SPKActionButtonSource source, NSString *topicTitle, NSArray<NSString *> *supportedActions, NSArray<SPKActionMenuSection *> *defaultSections);
 UIMenu *SPKReelsTapControlMenu(void);
 UIMenu *SPKMainFeedModeMenu(void);
+UIMenu *SPKSeenButtonPositionMenu(void);
+UIMenu *SPKLastActiveFormatMenu(void);
 UIMenu *SPKNavigationIconOrderingMenu(void);
 UIMenu *SPKLaunchTabMenu(void);
 UIMenu *SPKSwipeBetweenTabsMenu(void);
@@ -28,5 +30,6 @@ UIMenu *SPKNotificationPillPositionMenu(void);
 UIMenu *SPKMediaVideoQualityMenu(void);
 UIMenu *SPKMediaPhotoQualityMenu(void);
 UIMenu *SPKGalleryShortcutTargetMenu(void);
+SPKSetting *SPKFeedHeaderButtonDefaultActionNavigationSetting(void);
 
 NS_ASSUME_NONNULL_END

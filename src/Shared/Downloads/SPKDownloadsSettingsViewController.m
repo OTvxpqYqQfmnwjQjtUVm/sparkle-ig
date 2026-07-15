@@ -23,7 +23,7 @@
     NSMutableArray<UICommand *> *commands = [NSMutableArray array];
     for (NSDictionary *item in items) {
         [commands addObject:[UICommand commandWithTitle:item[@"title"]
-                                                  image:[SPKAssetUtils instagramIconNamed:item[@"icon"] pointSize:22.0]
+                                                  image:[SPKAssetUtils menuIconNamed:item[@"icon"]]
                                                  action:@selector(menuChanged:)
                                            propertyList:@{@"defaultsKey" : @"downloads_audio_page_default_action", @"value" : item[@"value"], @"iconName" : item[@"icon"]}]];
     }
@@ -59,7 +59,13 @@
                                                     viewController:[SPKMediaFFmpeg logsViewController]];
     encodingLogs.userInfo = @{@"enabled" : @YES};
 
-    NSString *qualityFooter = ffmpegAvailable ? @"\"High\" merges DASH files for best quality. \"Default\" uses ready-to-play files. \"Always Ask\" prompts for selection." : @"FFmpegKit is required for video quality options and encoding features.";
+    NSString *qualityFooter = ffmpegAvailable
+        ? @"1. Fetch the highest-resolution variant Instagram exposes for photos and videos.\n"
+          @"2. Preferred quality for downloaded photos.\n"
+          @"3. \"High\" merges DASH files for best quality, \"Default\" uses ready-to-play files, \"Always Ask\" prompts for selection each time.\n"
+          @"4. Configure how merged videos are re-encoded (codec, container, bitrate).\n"
+          @"5. Review the FFmpeg output from recent encoding jobs."
+        : @"FFmpegKit is required for video quality options and encoding features.";
 
     return @[
         SPKTopicSection(@"Behavior", @[
@@ -85,7 +91,9 @@
                                        label:@"entries"
                                singularLabel:@"entry"],
         ],
-                        @"Duplicate detection runs before downloading. Gallery checks are exact. Photos checks cover media Sparkle saved while tracking is enabled."),
+                        @"1. Check before downloading and skip media already saved. Gallery checks are exact; Photos checks cover media Sparkle saved while tracking is enabled.\n"
+                        @"2. How many downloads may run at the same time.\n"
+                        @"3. How many finished entries the download history keeps before trimming the oldest."),
         SPKTopicSection(@"Quality", @[
             [SPKSetting switchCellWithTitle:@"Enhanced Media Resolution"
                                        icon:SPKSettingsIcon(@"hd")

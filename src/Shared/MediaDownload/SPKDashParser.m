@@ -132,6 +132,22 @@ static NSString *SPKDashRegexCapture(NSString *source, NSRegularExpression *rege
     if (!media)
         return nil;
 
+    // Sparkle hint: a resolver may wrap media in a lightweight object (e.g. the DM
+    // aggregated-media snap) that can't itself expose the manifest, but points at the
+    // real IG media/video that can. Follow the hint first. Mirrors the sparkle*URL
+    // hint path used by the action-button download pipeline.
+    @try {
+        if ([media respondsToSelector:@selector(sparkleDashMedia)]) {
+            id hinted = ((id (*)(id, SEL))objc_msgSend)(media, @selector(sparkleDashMedia));
+            if (hinted && hinted != media) {
+                NSString *hintedManifest = [self dashManifestForMedia:hinted];
+                if (hintedManifest.length > 0)
+                    return hintedManifest;
+            }
+        }
+    } @catch (__unused NSException *exception) {
+    }
+
     NSArray<NSString *> *keys = @[
         @"video_dash_manifest",
         @"dash_manifest",

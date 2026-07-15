@@ -112,6 +112,12 @@ static NSString *const kGalleryQuickAccessDisabledValue = @"none";
                                 defaultsKey:@"trim_gallery_prompt_replace"]
         ],
                         @"When you trim or edit a Gallery item, ask whether to replace the original or save a copy. Off always saves a copy and keeps the original."),
+        SPKTopicSection(@"Preview", @[
+            [SPKSetting switchCellWithTitle:@"Show Media Info"
+                                       icon:SPKSettingsIcon(@"info")
+                                defaultsKey:@"gallery_preview_show_metadata"]
+        ],
+                        @"Overlay the username, source, and saved/posted dates on the expanded photo preview."),
         SPKTopicSection(@"Lock", @[
             [SPKSetting switchCellWithTitle:@"Gallery Passcode Lock"
                                        icon:SPKSettingsIcon(@"lock")
@@ -206,7 +212,9 @@ static NSString *const kGalleryQuickAccessDisabledValue = @"none";
         [[NSUserDefaults standardUserDefaults] setBool:!isOn forKey:kSPKGalleryFolderBarPinDisabledKey];
         [[NSNotificationCenter defaultCenter] postNotificationName:kSPKGalleryGridControlsChangedNotification object:nil];
     };
-    [sections addObject:SPKTopicSection(@"Browsing", @[ favoritesRow, pinFolderRow ], @"Pin favorites above other files inside the current sort and folder context. Keep the subfolder bar pinned to the top while scrolling.")];
+    [sections addObject:SPKTopicSection(@"Browsing", @[favoritesRow, pinFolderRow],
+                                        @"1. Pin favorites above other files inside the current sort and folder context.\n"
+                                        @"2. Keep the subfolder bar pinned to the top while scrolling.")];
 
     [sections addObject:SPKTopicSection(@"Editing", @[
                   [SPKSetting switchCellWithTitle:@"Ask to Replace Original"
@@ -230,7 +238,8 @@ static NSString *const kGalleryQuickAccessDisabledValue = @"none";
                                                  icon:SPKSettingsIcon(@"eye_off")
                                        viewController:[SPKGalleryHiddenSourcesViewController new]]
               ],
-                                        @"This Account Only shows media saved while logged into the current account (plus older unassigned files); reassign a file's account from its details sheet. Hidden Sources hides selected sources from Gallery browsing and upload picker sheets without deleting files.")];
+                                        @"1. Show only media saved while logged into the current account, plus older unassigned files; reassign a file's account from its details sheet.\n"
+                                        @"2. Hide selected sources from Gallery browsing and upload picker sheets without deleting their files.")];
 
     // Grid section: pinch-to-zoom toggle. Defaults ON; the backing pref stores
     // the *disabled* state, so the switch inverts.
@@ -252,7 +261,16 @@ static NSString *const kGalleryQuickAccessDisabledValue = @"none";
         [[NSNotificationCenter defaultCenter] postNotificationName:kSPKGalleryGridControlsChangedNotification object:nil];
     };
 
-    [sections addObject:SPKTopicSection(@"Grid", @[ pinchRow, sourceUsernameRow ], @"Pinch the grid to change density (2, 3 or 5 columns). Source icon and username overlay on each grid item; the username shows at lower densities.")];
+    [sections addObject:SPKTopicSection(@"Grid", @[ pinchRow, sourceUsernameRow ],
+                                        @"1. Pinch the grid to change density (2, 3 or 5 columns).\n"
+                                        @"2. Overlay the source icon and username on each grid item; the username shows at lower densities.")];
+
+    [sections addObject:SPKTopicSection(@"Preview", @[
+                  [SPKSetting switchCellWithTitle:@"Show Media Info"
+                                             icon:SPKSettingsIcon(@"info")
+                                      defaultsKey:@"gallery_preview_show_metadata"]
+              ],
+                                        @"Overlay the username, source, and saved/posted dates on the expanded photo preview. Tap the media to hide it along with the controls.")];
 
     NSMutableArray *lockRows = [NSMutableArray array];
 

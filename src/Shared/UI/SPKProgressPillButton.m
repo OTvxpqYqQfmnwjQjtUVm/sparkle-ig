@@ -105,4 +105,20 @@
     self.label.text = text;
 }
 
+- (void)setTextAnimated:(NSString *)text {
+    if ([self.label.text isEqualToString:text])
+        return;
+    if (!self.label.text.length) {
+        self.label.text = text;
+        return;
+    }
+    [UIView transitionWithView:self.label
+                      duration:0.25
+                       options:UIViewAnimationOptionTransitionCrossDissolve
+                    animations:^{
+                        self.label.text = text;
+                    }
+                    completion:nil];
+}
+
 @end

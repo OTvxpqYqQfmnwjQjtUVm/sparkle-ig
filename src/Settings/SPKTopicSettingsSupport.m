@@ -1,4 +1,6 @@
 #import "SPKTopicSettingsSupport.h"
+#import "../Features/Feed/HeaderActionButton.h"
+#import "SPKHeaderButtonDefaultActionPickerViewController.h"
 #import "../Shared/UI/SPKNotificationCenter.h"
 #import "SPKActionButtonDefaultActionPickerViewController.h"
 #import "SPKBulkActionMenuEditViewController.h"
@@ -195,6 +197,21 @@ UIMenu *SPKMainFeedModeMenu(void) {
     ]];
 }
 
+UIMenu *SPKSeenButtonPositionMenu(void) {
+    return [UIMenu menuWithChildren:@[
+        SPKMenuCommand(@"Top", @"arrow_up", nil, @"msgs_seen_button_position", @"top", NO),
+        SPKMenuCommand(@"Bottom", @"arrow_down", nil, @"msgs_seen_button_position", @"bottom", NO)
+    ]];
+}
+
+UIMenu *SPKLastActiveFormatMenu(void) {
+    return [UIMenu menuWithChildren:@[
+        SPKMenuCommand(@"Off", nil, nil, @"msgs_last_active_format", @"off", NO),
+        SPKMenuCommand(@"Smart", nil, nil, @"msgs_last_active_format", @"smart", NO),
+        SPKMenuCommand(@"Date & Time", nil, nil, @"msgs_last_active_format", @"datetime", NO)
+    ]];
+}
+
 UIMenu *SPKNavigationIconOrderingMenu(void) {
     return [UIMenu menuWithChildren:@[
         SPKMenuCommand(@"Default", nil, nil, @"interface_nav_order", @"default", YES),
@@ -312,6 +329,23 @@ UIMenu *SPKMediaPhotoQualityMenu(void) {
         SPKMenuCommand(@"High", nil, nil, @"downloads_photo_quality", @"high", NO),
         SPKMenuCommand(@"Low", nil, nil, @"downloads_photo_quality", @"low", NO)
     ]];
+}
+
+SPKSetting *SPKFeedHeaderButtonDefaultActionNavigationSetting(void) {
+    // A navigation row (like the media action button's Default Tap Action) rather
+    // than a menu-button cell: the selected value renders as a full-width subtitle
+    // beneath the title instead of squeezing / truncating the title on one line.
+    SPKSetting *setting = [SPKSetting navigationCellWithTitle:@"Default Tap Action"
+                                                     subtitle:@""
+                                                         icon:SPKSettingsIcon(@"action")
+                                               viewController:[SPKHeaderButtonDefaultActionPickerViewController new]];
+    setting.accessoryTextProvider = ^NSString * {
+        return SPKHeaderButtonDefaultActionTitle();
+    };
+    setting.iconProvider = ^UIImage * {
+        return SPKSettingsIcon(SPKHeaderButtonDefaultActionIconName());
+    };
+    return setting;
 }
 
 UIMenu *SPKGalleryShortcutTargetMenu(void) {

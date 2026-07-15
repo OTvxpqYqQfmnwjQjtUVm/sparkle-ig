@@ -4,7 +4,7 @@
 
 # Sparkle for Instagram
 
-`v1.0.0` · Tested on versions **437.2.0** and **410.1.0**
+`v1.1.0` · Tested on versions **438.0.0** and **410.1.0**
 
 [📣 Telegram Channel](https://t.me/sparkle_ig) · [💬 Chat & Support](https://t.me/+f-Xo21HnfCY3NmE0) · [📥 Releases](https://github.com/efibalogh/sparkle-ig/releases/latest) · [🐛 Issues](https://github.com/efibalogh/sparkle-ig/issues/new/choose) · [☕ Donate](https://ko-fi.com/sparkle_ig)
 
@@ -44,6 +44,7 @@ For the full list of features, check out [`FEATURES.md`](FEATURES.md).
 - **Action buttons everywhere**:
   - Fully customizable action-button menus on feed, reels, stories, DMs, Instants, and profiles.
   - Reorder, rename, re-icon, and set per-surface default tap actions.
+  - An optional feed-header shortcut button for one-tap access to Gallery, Profile Analyzer, Deleted Messages, Downloads or Settings.
 - **Keep deleted messages**:
   - Preserve unsent DMs, log removed reactions, and recover view-once media, with a browsable log.
 - **Profile Analyzer**:
@@ -59,6 +60,7 @@ For the full list of features, check out [`FEATURES.md`](FEATURES.md).
   - Optional "are you sure?" guards for accidental likes, follows, reposts, calls, comments, and more.
 - **Liquid Glass (iOS 26+)**:
   - Native Liquid Glass integration across Sparkle's own UI, plus an option to force-enable Instagram's.
+  - On iOS 18 and lower, a **Pill-Shaped Tab Bar** toggle brings the floating pill tab bar (shape only; the glass material stays iOS 26+).
 
 ## Installation
 

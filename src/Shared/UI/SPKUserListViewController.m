@@ -191,7 +191,7 @@ typedef NS_ENUM(NSInteger, SPKUserListSortMode) {
             [children addObjectsFromArray:[weakSelf sortMenuElements]];
         if (weakSelf.infoText.length) {
             UIAction *info = [UIAction actionWithTitle:@"How It Works"
-                                                 image:[SPKAssetUtils instagramIconNamed:@"info" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                 image:[SPKAssetUtils menuIconNamed:@"info"]
                                             identifier:nil
                                                handler:^(__unused UIAction *action) {
                                                    [weakSelf spk_showInfo];
@@ -275,8 +275,8 @@ typedef NS_ENUM(NSInteger, SPKUserListSortMode) {
 
         [self.emptyStateIcon.topAnchor constraintEqualToAnchor:self.emptyStateView.topAnchor],
         [self.emptyStateIcon.centerXAnchor constraintEqualToAnchor:self.emptyStateView.centerXAnchor],
-        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:72.0],
-        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:72.0],
+        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:96.0],
+        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:96.0],
 
         [self.emptyStateTitle.topAnchor constraintEqualToAnchor:self.emptyStateIcon.bottomAnchor constant:18.0],
         [self.emptyStateTitle.leadingAnchor constraintEqualToAnchor:self.emptyStateView.leadingAnchor],
@@ -391,7 +391,7 @@ typedef NS_ENUM(NSInteger, SPKUserListSortMode) {
                                                                         [weakSelf didDeleteItem:item];
                                                                         done(YES);
                                                                     }];
-    del.image = [SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    del.image = [SPKAssetUtils menuIconNamed:@"trash"];
     del.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
     del.accessibilityLabel = @"Remove";
     UISwipeActionsConfiguration *config = [UISwipeActionsConfiguration configurationWithActions:@[ del ]];

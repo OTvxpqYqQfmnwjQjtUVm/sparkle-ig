@@ -170,6 +170,7 @@ static UIView *spkFindCanvasDeep(UIView *root, NSInteger depth) {
 }
 @property (nonatomic, strong) SPKChromeCanvas *chromeCanvas;
 @property (nonatomic, strong) UIView *bubbleView;
+@property (nonatomic, strong) UIVisualEffectView *bubbleEffectView;
 @property (nonatomic, strong, readwrite) UIImageView *iconView;
 @end
 
@@ -286,9 +287,45 @@ static UIView *spkFindCanvasDeep(UIView *root, NSInteger depth) {
     _iconView.tintColor = iconTint;
 }
 
+// UIButton is the delegate of its own built-in context-menu interaction, so
+// overriding this in the subclass is called when the long-press menu displays.
+// Forwards to super, then runs the optional hook (nil for every other user).
+- (void)contextMenuInteraction:(UIContextMenuInteraction *)interaction
+     willDisplayMenuForConfiguration:(UIContextMenuConfiguration *)configuration
+                            animator:(id<UIContextMenuInteractionAnimating>)animator {
+    if ([UIButton instancesRespondToSelector:_cmd]) {
+        [super contextMenuInteraction:interaction
+      willDisplayMenuForConfiguration:configuration
+                             animator:animator];
+    }
+    if (_menuWillDisplayHandler)
+        _menuWillDisplayHandler();
+}
+
 - (void)setBubbleColor:(UIColor *)bubbleColor {
     _bubbleColor = bubbleColor;
     _bubbleView.backgroundColor = bubbleColor;
+}
+
+- (void)setBubbleEffect:(UIVisualEffect *)bubbleEffect {
+    _bubbleEffect = bubbleEffect;
+    if (!bubbleEffect) {
+        [_bubbleEffectView removeFromSuperview];
+        _bubbleEffectView = nil;
+        return;
+    }
+    if (!_bubbleEffectView) {
+        // Lives inside _bubbleView (which clips to the circle and sits inside the
+        // secure canvas) and below the icon, so it redacts on capture and morphs
+        // with the button.
+        _bubbleEffectView = [[UIVisualEffectView alloc] initWithEffect:bubbleEffect];
+        _bubbleEffectView.userInteractionEnabled = NO;
+        _bubbleEffectView.translatesAutoresizingMaskIntoConstraints = NO;
+        _bubbleEffectView.clipsToBounds = YES;
+        [_bubbleView addSubview:_bubbleEffectView];
+        spkPinEdges(_bubbleEffectView, _bubbleView);
+    }
+    _bubbleEffectView.effect = bubbleEffect;
 }
 
 - (void)reloadIcon {

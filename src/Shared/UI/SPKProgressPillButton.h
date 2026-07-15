@@ -15,6 +15,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign, getter=isBusy) BOOL busy;
 
 - (void)setText:(NSString *)text;
+/// Like \c setText: but cross-dissolves the label when the text actually changes.
+/// Use for discrete state swaps (e.g. "Scan Now" ⇄ "Scan Again"); keep
+/// rapid updates (progress status) on \c setText: to avoid flicker.
+- (void)setTextAnimated:(NSString *)text;
 - (void)setProgress:(double)progress animated:(BOOL)animated;
 
 @end

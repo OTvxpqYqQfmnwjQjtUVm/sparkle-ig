@@ -214,6 +214,12 @@
 @interface IGDirectVisualMessageViewerController : UIViewController
 @end
 
+// Full-screen viewer for permanent DM media (camera-roll photos/videos, chat-menu
+// media). Sparkle installs its action button here; see AggregatedMediaActionButton.xm.
+@interface IGDirectAggregatedMediaViewerViewController : UIViewController
+- (void)scrollViewDidEndDecelerating:(id)scrollView;
+@end
+
 @interface IGDirectVisualMessageViewerViewModeAwareDataSource : NSObject
 @end
 
@@ -263,6 +269,16 @@
 @interface IGTapButton : UIButton
 @end
 
+// Your-own-story viewer list (swipe up on your story). `_item` is the
+// id<IGStoryItemType> whose media pk we resolve to fetch the full viewer list.
+@interface IGStoryViewersListViewController : UIViewController
+@end
+
+// Collection section-header view used for the "Who viewed this story" label in
+// the viewer list — we pin the Sparkle viewer-search button to its trailing edge.
+@interface IGLabelSupplementaryView : UICollectionReusableView
+@end
+
 @interface IGLabel : UILabel
 @end
 
@@ -294,6 +310,18 @@
 @interface IGDirectInboxSearchAIAgentsSuggestedPromptRowCell : UIView
 @end
 
+// Chat header title view — holds the "Active now" / "Active Xh ago" presence
+// subtitle we rewrite into an absolute timestamp (Full Last Active feature).
+@interface IGDirectLeftAlignedTitleView : UIView
+@property (nonatomic, retain) id titleViewModel;
+- (id)delegate;
+- (id)_currentSubtitleViewModel;
+- (void)setTitleViewModel:(id)titleViewModel;
+- (void)animationCoordinatorDidUpdate:(id)coordinator;
+@end
+
+// Inbox row view model — its `socialContextText` carries the "Active Xh ago"
+// presence line rendered into the cell's social-context label (Full Last Active).
 @interface IGDSSegmentedPillBarView : UIView
 - (id)delegate;
 @end
@@ -409,6 +437,14 @@
 
 @interface _TtC27IGGalleryDestinationToolbar31IGGalleryDestinationToolbarView : UIView
 @property (nonatomic, copy, readwrite) NSArray *tools;
+@end
+
+// IGConsumerSubsStoryPeekDirectPlugin.IGConsumerSubsStoryPeekDirectManager — the
+// DM-inbox story peek entry. It calls presentPeek… (real) or presentPeekUpsell…
+// (subscribe dead-end) based on entitlement.
+@interface _TtC35IGConsumerSubsStoryPeekDirectPlugin36IGConsumerSubsStoryPeekDirectManager : NSObject
+- (void)presentPeekWithSourceView:(id)view reelPK:(id)pk presenting:(id)presenting onTapToOpenStory:(id)onTapToOpenStory onViewProfile:(id)onViewProfile;
+- (void)presentPeekUpsellWithSourceView:(id)view reelPK:(id)pk presenting:(id)presenting onSubscribeToInstagramPlus:(id)onSubscribe onViewProfile:(id)onViewProfile;
 @end
 
 @interface IGUFIInteractionCountsView : UIView

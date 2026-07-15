@@ -601,14 +601,10 @@ static UILabel *SPKProfileFindUsernameLabel(UIView *view) {
 // the title view (and its label) so it ends before us and truncates with "...",
 // mirroring IG's native behaviour when a trailing button is present. Runs after
 // IG's own layout each pass, so short names are left untouched / auto-reset.
-static void SPKProfileClampTitleToButton(UIView *headerView, SPKProfileHeaderActionButton *button) {
-    if (!headerView || !button || button.hidden)
-        return;
-
-    CGRect buttonInHeader = [button convertRect:button.bounds toView:headerView];
-    if (CGRectGetMinX(buttonInHeader) <= 1.0)
-        return;                                           // not positioned yet
-    CGFloat limitX = CGRectGetMinX(buttonInHeader) - 8.0; // clean gap before our button
+static void SPKProfileClampTitleToButton(UIView *headerView, CGFloat buttonMinX) {
+    if (!headerView || buttonMinX <= 1.0)
+        return;                            // no button / not positioned yet
+    CGFloat limitX = buttonMinX - 8.0;     // clean gap before our button
 
     UIView *titleView = SPKProfileFindTitleView(headerView);
     if (!titleView)
@@ -686,10 +682,6 @@ static void SPKProfilePlaceActionButton(UIView *headerView, BOOL titleIsCentered
     // position is stable (the glass alpha changes with scroll, our frame may not).
     SPKProfileUpdateGlass(button, headerView);
 
-    // Stop long usernames from running under the button (IG can't reserve space
-    // for an overlay). Runs every pass since IG re-expands the title each layout.
-    SPKProfileClampTitleToButton(headerView, button);
-
     CGFloat w = CGRectGetWidth(headerView.bounds);
     CGFloat h = CGRectGetHeight(headerView.bounds);
     if (w < 60.0 || h < 20.0)
@@ -730,6 +722,10 @@ static void SPKProfilePlaceActionButton(UIView *headerView, BOOL titleIsCentered
         // anchor, keep that good frame — otherwise a transient miss would snap it
         // to the top-right fallback and stick there once layout stops firing.
         if (lastVal) {
+            // Keep the good frame, but still re-clamp the title against it: IG
+            // re-expands the username every layout pass, so without this the name
+            // would run back under the button once we stop repositioning.
+            SPKProfileClampTitleToButton(headerView, CGRectGetMinX(lastFrame));
             return;
         }
         CGRect anyBtnFrame = SPKProfileGetAnyButtonFrame(headerView, headerView, CGRectZero);
@@ -743,6 +739,13 @@ static void SPKProfilePlaceActionButton(UIView *headerView, BOOL titleIsCentered
 
     CGFloat y = centerY - btnH * 0.5;
     CGRect expectedFrame = CGRectMake(floor(x), floor(y), btnW, btnH);
+
+    // Stop long usernames from running under the button (IG can't reserve space
+    // for an overlay). Clamp against the button's freshly-computed target frame —
+    // not its stale live frame — so truncation tracks the button in the SAME pass
+    // it moves (e.g. when More morphs into the wider Follow button and back). Runs
+    // before the early-return since IG re-expands the title every layout pass.
+    SPKProfileClampTitleToButton(headerView, CGRectGetMinX(expectedFrame));
 
     if (button.superview == headerView && CGRectEqualToRect(expectedFrame, lastFrame)) {
         return; // Avoid layout churn and layout resetting mid-animation

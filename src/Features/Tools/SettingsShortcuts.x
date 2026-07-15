@@ -27,6 +27,17 @@ static NSString *const kSPKGalleryQuickAccessDisabledValue = @"none";
 - (void)handleProfileMoreLongPress:(UILongPressGestureRecognizer *)sender;
 @end
 
+// Light confirmation tap fired when a tab-bar shortcut activates. The global
+// UIImpactFeedbackGenerator hook (DisableHaptics.x) already respects
+// general_disable_haptics, so this stays silent when the user disabled haptics.
+static void SPKFireShortcutHaptic(void) {
+    if (![SPKUtils getBoolPref:@"tools_shortcut_haptics"])
+        return;
+    UIImpactFeedbackGenerator *generator = [[UIImpactFeedbackGenerator alloc] initWithStyle:UIImpactFeedbackStyleLight];
+    [generator prepare];
+    [generator impactOccurred];
+}
+
 @implementation SPKSettingsShortcutTarget
 + (instancetype)sharedTarget {
     static SPKSettingsShortcutTarget *target;
@@ -42,6 +53,7 @@ static NSString *const kSPKGalleryQuickAccessDisabledValue = @"none";
         return;
 
     SPKLog(@"General", @"[Sparkle] Tweak settings gesture activated");
+    SPKFireShortcutHaptic();
     [SPKUtils showSettingsVC:sender.view.window];
 }
 @end
@@ -307,6 +319,7 @@ for (UIGestureRecognizer *gesture in [self.gestureRecognizers copy]) {
 if (sender.state != UIGestureRecognizerStateBegan)
     return;
 
+SPKFireShortcutHaptic();
 [SPKUtils showSettingsVC:[self window]];
 }
 
@@ -314,6 +327,7 @@ if (sender.state != UIGestureRecognizerStateBegan)
 if (sender.state != UIGestureRecognizerStateBegan)
     return;
 
+SPKFireShortcutHaptic();
 [SPKGalleryViewController presentGallery];
 }
 %end

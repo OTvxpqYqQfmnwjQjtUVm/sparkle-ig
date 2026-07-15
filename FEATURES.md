@@ -20,6 +20,9 @@ marked **(restart)** and prompt for a relaunch when changed.
 - **Confirm Create Group**: Confirmation alert before creating a group on Instagram send/share sheet.
 - **Confirm Send**: Confirmation alert before sending a post.
 
+### Media Preview
+- **Show Media Info**: Overlays the author and post date over the expanded photo preview. Tap the media to hide it together with the controls. (Photos only — video previews are left untouched so the scrubber and controls stay clear.)
+
 ### Recommendations
 - **Ads**: Per-surface ad hiding: Feed, Stories, Reels, Explore, plus Reels shopping CTA.
 - **Meta AI**: Hide Meta AI in Direct, Explore & Search, Comments, Creation Tools, and global AI chrome. Hiding it in Explore & Search also restores the plain search glyph in the search bar (replacing the gen-AI search icon).
@@ -73,7 +76,13 @@ Per-feature control of the Sparkle notification pill and its haptics. See **Noti
 
 ### Liquid Glass *(iOS 26+)*
 - **Liquid Glass**: Force-enables Instagram's native Liquid Glass UI for accounts/devices that don't already have it. **(restart)** Only ever forces it *on*; turning it off never suppresses Liquid Glass that Instagram already renders natively (server-rollout accounts) or that Sparkle's own screens (Gallery, Settings, etc.) pick up automatically from iOS 26: so Sparkle's UI never looks inconsistent with Instagram's regardless of this switch.
-- **Tab Bar State**: Controls how the floating Liquid Glass tab bar behaves while scrolling.
+- **Progressive Blur**: Restores the native progressive navigation bar blur on scroll. Requires iOS 26 (relies on `UIScrollEdgeEffect`).
+- **Tab Bar Behavior**: Controls how the floating Liquid Glass tab bar behaves while scrolling.
+
+### Tab Bar *(iOS 18 and lower)*
+On systems without Liquid Glass, the tab bar section is replaced by a focused toggle. The glass *material* is iOS 26+ only, but the floating pill *shape* comes from Instagram's tab bar experiment gates, which work on any iOS.
+- **Pill-Shaped Tab Bar**: Reshapes the tab bar into the iOS 26-style floating pill. **(restart)** Shape only — no glass material on this device.
+- **Tab Bar Behavior**: Controls how the pill tab bar behaves while scrolling (Default / Fixed / Hide on scroll).
 
 ---
 
@@ -86,8 +95,14 @@ Per-feature control of the Sparkle notification pill and its haptics. See **Noti
 - **Single-element submenus inline**: Any section or submenu (built-in or custom: Download All, Copy All, Copy Info, etc.) that resolves to a single action is shown inline instead of as a one-item collapsible submenu.
 - **Section icons**: Picking a section or submenu icon (including Bulk) opens the unified icon picker: a single searchable grid of the installed Instagram bundle's icons. There is no separate "shortcuts" row: your current icon is resolved and highlighted directly in the list. The same picker powers the App Icon and Open Menu Icon choosers.
 
+### Header Shortcut
+- **Feed Header Button** **(restart)**: Adds a Sparkle button to the home feed header, to the left of the notifications heart. In the classic tab layout (create button moved to the bottom bar) it docks on the far left instead, and it scrolls/fades away with Instagram's own header buttons.
+- **Default Tap Action**: Tap runs the chosen action — **Open Menu** (default, button shows the Sparkle glyph) or jump straight to one destination (button mirrors that destination's icon). A long-press always opens the menu.
+- **Destinations**: A sub-page to pick which sheets the button can open — **Sparkle Settings**, **Profile Analyzer**, **Gallery**, **Deleted Messages**, **Downloads**. Enable one for a direct tap or several to choose from the long-press menu. Changes apply when you return to the feed (no restart).
+
 ### Layout
 - **Main Feed**: `For You` or `Following`. Following mode forces the chronological feed, keeps pagination and cold starts on that source, and removes the For You picker entry. **(restart)**
+- **Disable App Icon Gesture**: Stops the feed header logo long-press from opening Instagram's app icon picker (Sparkle has its own under Settings).
 - **Hide Stories Tray**, **Hide Entire Feed**, **Hide Suggested Posts**, **Hide Suggested Accounts**, **Hide Suggested Reels**, **Hide Suggested Threads**.
 - **Hide Repost Button**: Removes the repost button from posts. **(restart)**
 
@@ -125,7 +140,12 @@ Per-feature control of the Sparkle notification pill and its haptics. See **Noti
 ### Confirmations
 - **Confirm Like**, **Confirm Quick Reaction**, **Confirm Sticker Interaction**.
 
+### Instagram Plus (not available in v410.1.0)
+- **Unlock Story Preview**: Unlocks the Instagram Plus "Story Preview" — long-pressing a story shows the real preview (photo, video, auto-advance) instead of the blurred upgrade upsell, without appearing on the viewer list. Also removes the "Try Instagram Plus" row from the long-press menu. Works from the feed story tray and DMs.
+- **Hide Viewer List Plus Button**: Hides the Instagram Plus button in your story's viewer list.
+
 ### Other
+- **Search Viewer List**: Adds a search button to your own story's viewer list. Tapping it fetches the complete viewer list and opens a sheet where you can search by username or name and filter by follow relationship (All / Following / Not Following). A fully Sparkle-native alternative to the Instagram Plus viewer search.
 - **Hide Story Midcards** Removes the "Join a trending" / "Add Yours" promo cards from the stories tray. 
 - **Show Story Mentions**: Adds a mentions button listing mentioned users.
 - **Show Poll Vote Counts**: Shows vote counts next to poll options.
@@ -163,10 +183,12 @@ Per-feature control of the Sparkle notification pill and its haptics. See **Noti
 
 ### Action Button
 - **Messages Action Button**, **Default Tap Action**, **Configure Actions**: For visual messages.
+- **Also Show on Chat Media**: Extends the action button to the full-screen viewer for permanent chat media — camera-roll photos and videos opened from a thread or the chat's shared-media grid. Replaces Instagram's native Save button, so media can be downloaded to Photos, the Sparkle Gallery, copied, shared, etc. Chat videos honor the **Download Video Quality** setting: when set to *Always Ask* the quality picker offers the video's full DASH ladder, same as feed/reels. Requires the Messages Action Button toggle.
 
 ### Messaging
 - **Manually Mark Seen**: adds an eye button to mark chats seen.
-- **Mark Seen on Message Send / Reply / Reaction**: auto-seen triggers; disabled unless Manually Mark Seen is on.
+- **Mark Seen on Message Send / Reply / Reaction / Typing**: auto-seen triggers; disabled unless Manually Mark Seen is on.
+- **Seen Button Position**: choose whether the eye button sits in the top nav bar or as a bubble above the composer, within thumb reach and hidden while you type. The bubble can be dragged aside to peek underneath and snaps back when you scroll. Disabled unless Manually Mark Seen is on.
 - **Included / Excluded Chats**: two separate per-account lists (Included when off, Excluded when on), same model as stories.
 
 ### Deleted Messages
@@ -180,6 +202,7 @@ Per-feature control of the Sparkle notification pill and its haptics. See **Noti
 - **Confirm Inbox Refresh**: Confirmation before pull-to-refresh in the inbox, which would reload threads and drop preserved messages.
 
 ### Interface
+- **Last Active**: Shows the exact time someone was last active in the chat header ("Active at 1:15 AM") instead of a relative label ("Active 2h ago"). Only reformats the presence Instagram already shows — no extra tracking — and leaves the live "Active now" window untouched. Choose **Off**, **Smart** (time alone for today, adds the date for older days), or **Date & Time** (always shows both).
 - **Hide Typing Status**: Suppresses your typing indicator.
 - **Hide Reels Blend Button**, **Hide Audio Call Button**, **Hide Video Call Button**, **No Suggested Chats**. Call-button visibility changes apply after reopening the DM thread.
 
@@ -242,7 +265,8 @@ Per-feature control of the Sparkle notification pill and its haptics. See **Noti
 - **Long Press to Expand**: Long-press a profile picture to open it expanded.
 
 ### Indicators
-- **Show Following Indicator**: Shows whether the profile follows you.
+- **Following Indicator**: Shows whether the profile follows you back, under their stats. Choose **Off**, **Icon**, **Text**, or **Icon & Text**.
+- **Colorful Indicator**: Turn on to use the colored green/red instead of the native gray.
 - **Hide Notes Bubble**: Removes the notes thought-bubble over the profile picture.
 - **Hide Threads Button**: Removes the Threads switch button from the profile header.
 
@@ -283,6 +307,7 @@ logs, and Profile Analyzer data live locally under `Documents/Sparkle/`.
 ### Gallery Settings
 - **Pinch to Zoom**: Enables grid density pinching.
 - **Show Source & Username**: Toggles the grid overlays above.
+- **Show Media Info**: Overlays the username, source, and saved/posted dates on the expanded photo preview. Tap the media to hide it along with the controls. (Photos only.)
 - **This Account Only**: Scopes the Gallery to media saved while logged into the current account (plus older unassigned files); enabling it offers to claim existing unassigned files for the current account. Each saved file is tagged with the account that saved it; reassign a file to another logged-in account from its **Edit Details → Account** row (e.g. to stash media into a different account's Gallery). Non-destructive: turn it off to see everything.
 - **Hidden Sources**: Hides selected sources, from Gallery browsing and Gallery picker sheets without deleting files or excluding them from maintenance and duplicate tracking.
 - **Enable Passcode Lock** + **Change Passcode**: 4–6 digit passcode with Face ID / Touch ID unlock. Hashes are stored in the keychain (PBKDF2-HMAC-SHA256). Enforced globally when opening the Gallery itself and all gallery picker sheets (e.g., when uploading media in Direct Messages or Instants).
@@ -305,11 +330,14 @@ the main settings search.
 - **Parallel Downloads**: Limits concurrent download work from 1–4 (default 2) across direct saves, carousel items, conversions, and DASH merge pipelines.
 - **History Limit**: Caps saved download actions at a configurable history limit (default 300 entries).
 
+### Storage
+- Each download keeps a **staged copy on disk** so its history entry stays previewable on tap; this staged data (plus staged source/preview scratch) is what the **Storage Usage → Downloads** figure counts. Clearing a download from history — via **Clear Finished Downloads**, a swipe-delete, or the history-limit trim — frees its staged copy automatically. Media already saved to Photos or the Gallery is never affected. On launch, Sparkle also sweeps any **orphaned** staged leftovers no longer tied to a history entry (interrupted downloads, crash leftovers, or backlog from older builds), so the cache stays bounded by your history without any manual step.
+
 ### Quality
 - **Enhanced Media Resolution**: Requests higher-resolution media for downloads.
 - **Default Photo Quality**: `High` / `Low` (or always ask).
 - **Default Video Quality**: Save/share quality. `High` merges DASH video + audio; `Default` uses ready-to-play files; `Always Ask` prompts each time. **Requires FFmpegKit** for the merge/quality options.
-- **Encoding Settings**: Advanced codec / preset / bitrate / CRF / resolution / audio overrides for the merge step (requires FFmpegKit).
+- **Encoding Settings**: Advanced codec / preset / bitrate / CRF / resolution / audio overrides for the merge step (requires FFmpegKit). A **Reset Encoding Settings** button restores every advanced encoding option to its default (the toggle stays on).
 - **View Encoding Logs**: Inspect and share the FFmpeg loader/merge logs.
 
 ### Audio
@@ -329,7 +357,7 @@ uploaded. Accounts with more than 13,000 total connections (followers + followin
 can't be analyzed because a single scan would hit Instagram's rate limits.
 
 ### Analyzer
-- **Open Profile Analyzer**: Dashboard with your profile header (avatar, posts/followers/following), a Run/Re-run Analysis button, and the insight categories below.
+- **Open Profile Analyzer**: Dashboard with your profile header (avatar, @username, and posts/followers/following — your identity shows even before the first scan), a Scan Now/Again button that intermittently surfaces when you last analyzed, and the insight categories below.
 - **Insights** (always available after a scan):
   - **Mutual Followers**: accounts you follow that also follow you.
   - **Not Following You Back**: accounts you follow that don't follow you.
@@ -342,7 +370,7 @@ can't be analyzed because a single scan would hit Instagram's rate limits.
 - Each list supports search, sorting (A–Z / Z–A / default), tapping a row to open the profile, and inline **Follow / Unfollow** with live follow-state resolution.
 
 ### Tracking
-- **Track Visited Profiles**: Records the profiles you open so you can review who you visit most (with first/last-seen and a visit count). Most-recent, most-visited, and alphabetical sorts; swipe to remove an entry. Stored locally.
+- **Track Visited Profiles**: Records the profiles you open so you can review who you visit most (with first/last-seen and a visit count). Most-recent, most-visited, and alphabetical sorts; swipe to remove an entry, or clear the whole history from the list's **More** menu. Stored locally.
 
 ### Maintenance
 - **Reset Profile Analyzer Data**: Deletes all stored snapshots, the change history, and visited-profile history.
@@ -381,16 +409,18 @@ clearing, and more.
 
 ### Tweak
 - **Quick Settings Access**: Long-press the Home tab to open Sparkle Settings. **(restart)** If the Home tab is hidden or claimed by the Gallery shortcut, the long-press automatically falls back to another visible tab so Settings is always reachable.
+- **Shortcut Haptics**: Light haptic feedback when opening Settings / Gallery.
 - **Show Settings on App Launch**.
 - **Disable All Settings**: Master kill switch; only Settings access remains. **(restart)**
-- **Reset Onboarding Completion State**.
+- **Show Onboarding**: Replays the first-run introduction sheet at any time.
+- **Show What's New**: Replays this release's What's New sheet at any time.
 - **Reset Safe Startup Mode**: Clears Sparkle's failed-launch counters and re-enables feature hooks after the launch failsafe kicked in.
 
 ### Settings Lock
 - **Enable Settings Passcode Lock** + **Change Settings Passcode**: Uses an independent keychain-backed passcode and Face ID / Touch ID unlock. Protects full Settings and topic sheets opened from action buttons; Settings remains unlocked until its modal is dismissed.
 
 ### Instagram
-- **Hide TestFlight Popup**: Suppresses the Instagram Beta update popup. **(restart)**
+- **Hide TestFlight Popup**: Suppresses the Instagram Beta update popup. On by default and only shown on sideloaded builds (hidden on jailbroken installs, where the nag never appears). **(restart)**
 - **Fix Duplicate Notifications**: Drops the duplicate in-app banner sideloaded Instagram posts while the notification extension is already delivering the same push. Only acts while the app is foregrounded.
 - **Disable Safe Mode**: Prevents Instagram from resetting settings after repeated crashes (use with care).
 
@@ -405,4 +435,5 @@ clearing, and more.
 - **Export / Import**: Export/import any combination of **Settings**, **Gallery** media + metadata, **Deleted Messages**, and **Profile Analyzer** data to a single `.zip` file. Media Recovery Cache assets are intentionally excluded until they belong to an unsent message. Imports also accept backups re-compressed by Files, iCloud, or desktop tools.
 
 ### Reset
-- **Reset All Settings**: Restore every preference to its default value.
+- **Reset All Settings**: Restore every preference to its default value. When **per-account settings** is on, a prompt first asks whether to reset **All Accounts** or **This Account Only** (like Export) — a per-account reset clears only the active account's overrides and leaves other accounts untouched.
+- Individual **configurable** settings can also be reset in place, without wiping everything: **Reset Encoding Settings** on the Advanced Encoding page, and **Reset to Default** at the bottom of each surface's **Configure Actions** editor (resets that surface's menu sections, default action, and bulk menus only).

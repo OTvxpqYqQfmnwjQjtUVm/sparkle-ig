@@ -214,8 +214,13 @@ void SPKMediaChromeSetLeadingTopBarItems(UINavigationItem *navigationItem, NSArr
                                                : @[];
         return;
     }
-    navigationItem.leftBarButtonItems = items.count > 0 ? items : nil;
+    // `leftBarButtonItem` and `leftBarButtonItems` share the same backing storage
+    // (the singular is a convenience for the first element), so clear the singular
+    // *before* assigning the plural — doing it after would wipe what we just set,
+    // leaving iOS 15 with no leading items. (The iOS 16 branch above already nils
+    // both before setting the groups, which is why only iOS 15 was affected.)
     navigationItem.leftBarButtonItem = nil;
+    navigationItem.leftBarButtonItems = items.count > 0 ? items : nil;
 }
 
 void SPKMediaChromeSetTrailingTopBarItems(UINavigationItem *navigationItem, NSArray<UIBarButtonItem *> *items) {
@@ -230,8 +235,10 @@ void SPKMediaChromeSetTrailingTopBarItems(UINavigationItem *navigationItem, NSAr
                                                 : @[];
         return;
     }
-    navigationItem.rightBarButtonItems = items.count > 0 ? items : nil;
+    // See SPKMediaChromeSetLeadingTopBarItems: clear the singular before the plural
+    // so the assignment isn't wiped on iOS 15.
     navigationItem.rightBarButtonItem = nil;
+    navigationItem.rightBarButtonItems = items.count > 0 ? items : nil;
 }
 
 #pragma mark - Bottom Toolbar

@@ -447,7 +447,7 @@ then
     MAKEARGS='SIDELOAD=1 DEBUG=0 FINALPACKAGE=1'
     COMPRESSION=9
     if [ "$OPT_DEV" -eq 1 ]; then
-        MAKEARGS='DEV=1'
+        MAKEARGS='SIDELOAD=1 DEV=1'
         COMPRESSION=0
     fi
 

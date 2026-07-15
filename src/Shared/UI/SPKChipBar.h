@@ -30,6 +30,13 @@ NS_ASSUME_NONNULL_BEGIN
 // horizontally with intrinsically-sized chips. Set before `setItems:`.
 @property (nonatomic, assign) BOOL distributesToFit;
 
+// If YES, scrolling is disabled and the chips fill the bar's width sized
+// *proportionally* to their content — so a longer label gets a wider chip and
+// the labels keep their full font (no per-chip shrink). Use this instead of
+// `distributesToFit` when the labels differ a lot in length. Mutually exclusive
+// with `distributesToFit`. Set before `setItems:`.
+@property (nonatomic, assign) BOOL distributesProportionally;
+
 // The currently selected index (for single-select mode). Default: 0.
 @property (nonatomic, assign) NSInteger selectedIndex;
 

@@ -8,6 +8,8 @@
 #import "../Utils.h"
 #import "SPKActionSectionEditViewController.h"
 #import "SPKBulkActionMenuEditViewController.h"
+#import "SPKPreferences.h"
+#import "SPKSettingsTransferManager.h"
 #import "SPKTopicSettingsSupport.h"
 
 static char kSPKActionsListSwitchAssocKey;
@@ -86,6 +88,10 @@ static char kSPKActionsListSwitchAssocKey;
     return [self hasBulkEditorSection] ? 3 : 2;
 }
 
+- (NSInteger)resetSectionIndex {
+    return [self hasBulkEditorSection] ? 4 : 3;
+}
+
 - (NSString *)bulkEditorKindForRow:(NSInteger)row {
     NSArray<NSString *> *kinds = [self bulkEditorKinds];
     if (row < 0 || row >= (NSInteger)kinds.count) {
@@ -121,7 +127,7 @@ static char kSPKActionsListSwitchAssocKey;
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return [self hasBulkEditorSection] ? 4 : 3;
+    return ([self hasBulkEditorSection] ? 4 : 3) + 1;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -131,6 +137,8 @@ static char kSPKActionsListSwitchAssocKey;
         return [self bulkEditorKinds].count;
     if (section == [self unassignedSectionIndex])
         return self.configuration.unassignedActions.count;
+    if (section == [self resetSectionIndex])
+        return 1;
     return self.configuration.supportedActions.count;
 }
 
@@ -141,6 +149,8 @@ static char kSPKActionsListSwitchAssocKey;
         return @"All Menus";
     if (section == [self unassignedSectionIndex])
         return @"Unassigned Actions";
+    if (section == [self resetSectionIndex])
+        return nil;
     return @"Available Actions";
 }
 
@@ -151,6 +161,8 @@ static char kSPKActionsListSwitchAssocKey;
         return @"Actions here are supported but do not appear in the runtime menu.";
     if (section == [self availableSectionIndex])
         return @"Disabled actions are hidden even if they remain assigned to a section.";
+    if (section == [self resetSectionIndex])
+        return @"Restores this surface's menu sections, default action, and bulk menus to their defaults. Other surfaces are unaffected.";
     return nil;
 }
 
@@ -211,6 +223,12 @@ static char kSPKActionsListSwitchAssocKey;
         config.image = SPKSettingsIcon([kind isEqualToString:@"download"] ? @"download" : @"copy");
         config.imageProperties.tintColor = [SPKUtils SPKColor_InstagramPrimaryText];
         cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        cell.selectionStyle = UITableViewCellSelectionStyleDefault;
+    } else if (indexPath.section == [self resetSectionIndex]) {
+        config.text = @"Reset to Default";
+        config.textProperties.color = [SPKUtils SPKColor_InstagramDestructive];
+        config.image = SPKSettingsIcon(@"arrow_ccw");
+        config.imageProperties.tintColor = [SPKUtils SPKColor_InstagramDestructive];
         cell.selectionStyle = UITableViewCellSelectionStyleDefault;
     } else if (indexPath.section == [self unassignedSectionIndex]) {
         NSString *identifier = self.configuration.unassignedActions[indexPath.row];
@@ -288,6 +306,11 @@ static char kSPKActionsListSwitchAssocKey;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.section == [self resetSectionIndex]) {
+        [self resetConfigurationTapped];
+        [tableView deselectRowAtIndexPath:indexPath animated:YES];
+        return;
+    }
     if (indexPath.section == [self bulkEditorSectionIndex]) {
         NSString *kind = [self bulkEditorKindForRow:indexPath.row];
         UIViewController *controller = [self bulkEditorControllerForKind:kind];
@@ -347,7 +370,7 @@ static char kSPKActionsListSwitchAssocKey;
                                                                                  [weakSelf removeSectionAtIndexPath:indexPath];
                                                                                  completionHandler(YES);
                                                                              }];
-    deleteAction.image = [SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    deleteAction.image = [SPKAssetUtils menuIconNamed:@"trash"];
     deleteAction.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
     deleteAction.accessibilityLabel = @"Remove Section";
     return [UISwipeActionsConfiguration configurationWithActions:@[ deleteAction ]];
@@ -371,6 +394,43 @@ static char kSPKActionsListSwitchAssocKey;
                                                                                                                   [weakSelf.tableView reloadData];
                                                                                                               }];
     [self.navigationController pushViewController:controller animated:YES];
+}
+
+- (NSArray<NSString *> *)configurationResetKeys {
+    NSString *topic = SPKActionButtonTopicKeyForSource(self.source);
+    NSMutableArray<NSString *> *keys = [NSMutableArray arrayWithArray:@[
+        SPKPrefActionButtonConfigKey(topic),
+        SPKPrefActionButtonDefaultActionKey(topic),
+        SPKPrefActionButtonBulkDownloadKey(topic),
+        SPKPrefActionButtonBulkCopyKey(topic)
+    ]];
+    // The profile Copy Info submenu and its default copy action are edited from this
+    // surface too, so fold them into the profile reset.
+    if (self.source == SPKActionButtonSourceProfile) {
+        [keys addObject:@"profile_action_btn_copy_info_submenu_actions"];
+        [keys addObject:@"profile_action_btn_default_copy_info_action"];
+    }
+    return keys;
+}
+
+- (void)resetConfigurationTapped {
+    __weak typeof(self) weakSelf = self;
+    [[SPKSettingsTransferManager sharedManager]
+        resetConfigurationGroupFromController:self
+                                        title:@"Reset to Default"
+                                      message:@"This restores this surface's menu sections, default action, and bulk menus to their defaults. The action button stays enabled and other surfaces are unaffected."
+                                 confirmTitle:@"Reset"
+                                         keys:[self configurationResetKeys]
+                                      onReset:^{
+                                          typeof(self) strongSelf = weakSelf;
+                                          if (!strongSelf)
+                                              return;
+                                          strongSelf.configuration = [SPKActionButtonConfiguration configurationForSource:strongSelf.source
+                                                                                                               topicTitle:strongSelf.configuration.topicTitle
+                                                                                                         supportedActions:SPKActionButtonSupportedActionsForSource(strongSelf.source)
+                                                                                                          defaultSections:SPKActionButtonDefaultSectionsForSource(strongSelf.source)];
+                                          [strongSelf.tableView reloadData];
+                                      }];
 }
 
 - (void)disabledSwitchChanged:(UISwitch *)sender {

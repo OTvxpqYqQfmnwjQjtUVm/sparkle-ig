@@ -108,6 +108,7 @@ static NSDictionary<NSString *, SPKAssetDescriptor *> *SPKAssetOverrides(void) {
             @"audio_download" : @{@"candidates" : @[ @"ig_icon_music_import_outline_24" ]},
             @"audio_page" : @{@"candidates" : @[ @"ig_icon_audio_page_prism_outline_24", @"ig_icon_audio_page_outline_24" ]},
             @"audio_upload" : @{@"candidates" : @[ @"ig_icon_audio_extract_outline_24" ]},
+            @"aura" : @{@"candidates" : @[ @"ig_icon_aura_outline_24", @"ig_icon_circle_add_outline_24" ]},
             @"autoplay_off" : @{@"candidates" : @[ @"ig_icon_auto_play_off_outline_24" ]},
             @"autoscroll" : @{@"candidates" : @[ @"ig_icon_auto_scroll_outline_24" ]},
             @"backspace" : @{@"candidates" : @[ @"ig_icon_backspace_outline_24" ]},
@@ -127,6 +128,7 @@ static NSDictionary<NSString *, SPKAssetDescriptor *> *SPKAssetOverrides(void) {
             @"circle_check_filled" : @{@"candidates" : @[ @"ig_icon_circle_check_pano_filled_24", @"ig_icon_circle_check_filled_24" ]},
             @"circle_xmark" : @{@"candidates" : @[ @"ig_icon_circle_x_pano_outline_24", @"ig_icon_circle_x_outline_24" ]},
             @"clock" : @{@"candidates" : @[ @"ig_icon_clock_pano_outline_24", @"ig_icon_clock_outline_24" ]},
+            @"clock_filled" : @{@"candidates" : @[ @"ig_icon_clock_filled_24" ]},
             @"close" : @{@"candidates" : @[ @"ig_icon_x_pano_outline_24", @"ig_icon_x_outline_24" ]},
             @"cloud" : @{@"candidates" : @[ @"ig_icon_app_icloud_outline_24" ]},
             @"comment" : @{@"candidates" : @[ @"ig_icon_comment_pano_outline_24", @"ig_icon_comment_outline_24" ]},
@@ -137,6 +139,7 @@ static NSDictionary<NSString *, SPKAssetDescriptor *> *SPKAssetOverrides(void) {
             @"crop" : @{@"candidates" : @[ @"ig_icon_crop_outline_24" ]},
             @"donate" : @{@"candidates" : @[ @"ig_icon_donations_outline_44" ]},
             @"download" : @{@"candidates" : @[ @"ig_icon_download_outline_24" ]},
+            @"download_filled" : @{@"candidates" : @[ @"ig_icon_download_filled_24" ]},
             @"download_reels" : @{@"candidates" : @[ @"ig_icon_download_outline_44" ]},
             @"duplicate" : @{@"candidates" : @[ @"ig_icon_photo_dump_outline_24" ]},
             @"edit" : @{@"candidates" : @[ @"ig_icon_edit_outline_24" ]},
@@ -234,6 +237,7 @@ static NSDictionary<NSString *, SPKAssetDescriptor *> *SPKAssetOverrides(void) {
             @"save" : @{@"candidates" : @[ @"ig_icon_save_pano_outline_24", @"ig_icon_save_outline_24" ]},
             @"search" : @{@"candidates" : @[ @"ig_icon_search_pano_outline_24", @"ig_icon_search_outline_24" ]},
             @"settings" : @{@"candidates" : @[ @"ig_icon_settings_pano_outline_24", @"ig_icon_settings_outline_24" ]},
+            @"settings_menu": @{@"candidates": @[ @"ig_icon_menu_outline_24" ]},
             @"settings_reels" : @{@"candidates" : @[ @"ig_icon_settings_outline_44" ]},
             @"share" : @{@"candidates" : @[ @"ig_icon_share_pano_outline_24" ]},
             @"share_reels" : @{@"candidates" : @[ @"ig_icon_share_outline_44" ]},
@@ -245,11 +249,13 @@ static NSDictionary<NSString *, SPKAssetDescriptor *> *SPKAssetOverrides(void) {
             @"size_small" : @{@"candidates" : @[ @"ig_icon_fill_outline_24" ]},
             @"slider" : @{@"candidates" : @[ @"ig_icon_sliders_pano_outline_24", @"ig_icon_sliders_outline_24" ]},
             @"sort" : @{@"candidates" : @[ @"ig_icon_sort_pano_outline_24" ]},
+            @"subtract" : @{@"candidates" : @[ @"ig_icon_subtract_outline_24" ]},
             @"sparkle_gallery" : @{@"candidates" : @[ @"ig_icon_effect_page_prism_outline_24", @"ig_icon_effect_page_outline_24" ]},
             @"sticker" : @{@"candidates" : @[ @"ig_icon_sticker_prism_outline_24", @"ig_icon_sticker_pano_outline_24" ]},
             @"sticker_filled" : @{@"candidates" : @[ @"ig_icon_sticker_prism_filled_24", @"ig_icon_sticker_pano_filled_24" ]},
             @"story" : @{@"candidates" : @[ @"ig_icon_story_pano_outline_24", @"ig_icon_story_outline_24" ]},
             @"story_filled" : @{@"candidates" : @[ @"ig_icon_story_pano_filled_24", @"ig_icon_story_filled_24" ]},
+            @"story_preview": @{@"candidates" : @[ @"eye-off_Outline_24" ]},
             @"text" : @{@"candidates" : @[ @"ig_icon_text_outline_24" ]},
             @"threads" : @{@"candidates" : @[ @"ig_icon_app_threads_pano_outline_24", @"ig_icon_app_threads_outline_24" ]},
             @"toolbox" : @{@"candidates" : @[ @"ig_icon_toolbox_outline_24" ]},
@@ -271,9 +277,9 @@ static NSDictionary<NSString *, SPKAssetDescriptor *> *SPKAssetOverrides(void) {
             @"user_unfollow" : @{@"candidates" : @[ @"ig_icon_user_unfollow_prism_outline_24", @"ig_icon_user_unfollow_outline_24" ]},
             @"username" : @{@"candidates" : @[ @"ig_icon_user_nickname_prism_outline_24", @"ig_icon_user_nickname_outline_24" ]},
             @"users_empty": @{@"candidates" : @[ @"ig_icon_users_prism_outline_96", @"ig_icon_users_outline_96" ]},
-            @"verified" : @{@"candidates" : @[ @"ig_icon_verified_filled_12", @"ig_icon_verified_filled_16", @"ig_icon_verified_outline_16" ]},
             @"users" : @{@"candidates" : @[ @"ig_icon_users_prism_outline_24", @"ig_icon_users_prism_outline_24" ]},
             @"vanish" : @{@"candidates" : @[ @"ig_icon_vanish_mode_outline_24", @"ig_icon_clock_dotted_pano_outline_24", @"ig_icon_clock_dotted_outline_24" ]},
+            @"verified" : @{@"candidates" : @[ @"ig_icon_verified_filled_12", @"ig_icon_verified_filled_16", @"ig_icon_verified_outline_16" ]},
             @"video" : @{@"candidates" : @[ @"ig_icon_video_chat_pano_outline_24", @"ig_icon_video_chat_outline_24" ]},
             @"video_play" : @{@"candidates" : @[ @"video-play-small", @"ig_icon_play_prism_outline_24", @"ig_icon_play_outline_24" ]},
             @"video_pause" : @{@"candidates" : @[ @"video-pause", @"ig_icon_pause_filled_24" ]},
@@ -528,6 +534,41 @@ static UIImage *SPKAssetLookupInstagramIcon(NSString *name, CGFloat pointSize, S
         return image;
     }
     return SPKAssetFallbackImage(pointSize, renderingMode);
+}
+
++ (UIImage *)menuIconNamed:(NSString *)name {
+    // pointSize 0 = SPKAssetScaleImage no-ops, so the catalog image is returned
+    // untouched with no UIGraphicsImageRenderer pass. That pass is exactly what
+    // iOS 16's UIMenu refuses to render for vector-backed (.svg) glyphs — even
+    // when the render size equals the native size, so we cannot redraw at all.
+    UIImage *image = [self instagramIconNamed:name
+                                    pointSize:0
+                                       source:SPKAssetCatalogSourceAutomatic
+                                renderingMode:UIImageRenderingModeAlwaysTemplate];
+    return [self menuSizedIcon:image];
+}
+
++ (UIImage *)menuSizedIcon:(UIImage *)image {
+    if (!image) {
+        return nil;
+    }
+
+    // IG menu glyphs are 24pt native, but our menus want the standard 22pt.
+    // We can't downscale through a renderer (see menuIconNamed:), so instead
+    // reinterpret the image's scale: relabelling its existing pixels at a higher
+    // scale makes the same bitmap map to a smaller point size, with no redraw —
+    // so it renders like the native image does, just at 22pt.
+    static const CGFloat kSPKMenuIconPointSize = 22.0;
+    CGFloat maxDimension = MAX(image.size.width, image.size.height);
+    CGImageRef cgImage = image.CGImage;
+    if (cgImage && maxDimension > kSPKMenuIconPointSize + 0.01) {
+        CGFloat rescaled = image.scale * (maxDimension / kSPKMenuIconPointSize);
+        image = [[UIImage imageWithCGImage:cgImage
+                                     scale:rescaled
+                               orientation:image.imageOrientation]
+                    imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+    }
+    return image;
 }
 
 + (NSString *)resolvedInstagramIconNameForName:(NSString *)name {

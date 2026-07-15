@@ -246,6 +246,9 @@ static void SPKHookInstanceMethodIfPresent(Class cls, SEL selector, IMP replacem
 extern "C" void SPKInstallLiquidGlassHooksIfEnabled(void) {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
+        // The tab bar reshape (floating pill) is shape-only and works on any
+        // iOS — the tab bar experiment gates just change the bar's layout, not
+        // its material. These always install when the pref is on.
         int result = rebind_symbols((struct rebinding[]){
                                         {"IGFloatingTabBarEnabled", (void *)hook_IGFloatingTabBarEnabled, (void **)&orig_IGFloatingTabBarEnabled},
                                         {"IGTabBarDynamicSizingEnabled", (void *)hook_IGTabBarDynamicSizingEnabled, (void **)&orig_IGTabBarDynamicSizingEnabled},
@@ -257,16 +260,27 @@ extern "C" void SPKInstallLiquidGlassHooksIfEnabled(void) {
                                     6);
         SPKLog(@"LiquidGlass", @"Surface fishhook result=%d", result);
 
-        Class cls = objc_getClass("IGLiquidGlassSwizzle.IGLiquidGlassSwizzleToggle");
+        Class cls = objc_getClass("IGLiquidGlassInteractiveTabBar");
+        SPKHookInstanceMethodIfPresent(cls, @selector(setScaleProgress:), (IMP)hook_tabBar_setScaleProgress, (IMP *)&orig_tabBar_setScaleProgress);
+        SPKHookInstanceMethodIfPresent(cls, @selector(scaleDownWithInteraction:), (IMP)hook_tabBar_scaleDownWithInteraction, (IMP *)&orig_tabBar_scaleDownWithInteraction);
+
+        // The remaining hooks force IG's Liquid Glass *material* onto the nav
+        // chrome — back / Follow buttons, profile tab chips, feed header, DM
+        // inbox header. iOS 18 and lower can't render that material, so these
+        // would leave those controls as barely-visible translucent blobs. Only
+        // install them where the glass material actually exists (iOS 26+); on
+        // older systems the pref means "Pill-Shaped Tab Bar", nothing more.
+        if (!SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"26.0")) {
+            SPKLog(@"LiquidGlass", @"Pre-iOS 26: tab bar pill only, skipping chrome glass hooks");
+            return;
+        }
+
+        cls = objc_getClass("IGLiquidGlassSwizzle.IGLiquidGlassSwizzleToggle");
         SPKHookInstanceMethodIfPresent(cls, @selector(isEnabled), (IMP)hook_swizzleToggle_isEnabled, (IMP *)&orig_swizzleToggle_isEnabled);
 
         cls = objc_getClass("IGLiquidGlassExperimentHelper.IGLiquidGlassNavigationExperimentHelper");
         SPKHookInstanceMethodIfPresent(cls, @selector(isEnabled), (IMP)hook_navigationExperiment_isEnabled, (IMP *)&orig_navigationExperiment_isEnabled);
         SPKHookInstanceMethodIfPresent(cls, @selector(isHomeFeedHeaderEnabled), (IMP)hook_navigationExperiment_isHomeFeedHeaderEnabled, (IMP *)&orig_navigationExperiment_isHomeFeedHeaderEnabled);
-
-        cls = objc_getClass("IGLiquidGlassInteractiveTabBar");
-        SPKHookInstanceMethodIfPresent(cls, @selector(setScaleProgress:), (IMP)hook_tabBar_setScaleProgress, (IMP *)&orig_tabBar_setScaleProgress);
-        SPKHookInstanceMethodIfPresent(cls, @selector(scaleDownWithInteraction:), (IMP)hook_tabBar_scaleDownWithInteraction, (IMP *)&orig_tabBar_scaleDownWithInteraction);
 
         cls = SPKDirectInboxNavigationHeaderViewClass();
         SPKHookInstanceMethodIfPresent(cls, @selector(layoutSubviews), (IMP)hook_directInboxHeader_layoutSubviews, (IMP *)&orig_directInboxHeader_layoutSubviews);

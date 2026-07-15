@@ -40,12 +40,12 @@ static NSString *const kViewModeKey = @"gallery_view_mode"; // 0 = grid, 1 = lis
 static NSString *const kFavoritesAtTopKey = @"gallery_show_favorites_top";
 
 static CGFloat const kGridSpacing = 2.0;
-static CGFloat const kGalleryMenuIconPointSize = 22.0;
 static NSInteger const kSPKUINavigationItemSearchBarPlacementIntegratedButton = 4;
 
 static UIImage *SPKGalleryMenuActionIcon(NSString *resourceName) {
-    return [SPKAssetUtils instagramIconNamed:(resourceName.length > 0 ? resourceName : @"more")
-                                   pointSize:kGalleryMenuIconPointSize];
+    // menuIconNamed: avoids the UIGraphicsImageRenderer downscale that iOS 16's
+    // UIMenu renders blank for vector-backed (.svg) glyphs. See SPKAssetUtils.
+    return [SPKAssetUtils menuIconNamed:(resourceName.length > 0 ? resourceName : @"more")];
 }
 
 // Counts items in `folderPath` (including descendants). When `extraFilter` is
@@ -88,6 +88,7 @@ typedef NS_ENUM(NSInteger, SPKGalleryViewMode) {
 @property (nonatomic, strong) NSFetchedResultsController *fetchedResultsController;
 @property (nonatomic, strong) UIView *emptyStateView;
 @property (nonatomic, strong) UILabel *emptyStateLabel;
+@property (nonatomic, strong) UILabel *emptyStateSubtitle;
 // Bottom toolbar is the hosting navigation controller's native UIToolbar.
 // iOS 26 renders it as a Liquid Glass pill; earlier systems show a standard bar.
 
@@ -656,7 +657,7 @@ typedef NS_ENUM(NSInteger, SPKGalleryViewMode) {
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectZero];
     label.translatesAutoresizingMaskIntoConstraints = NO;
     label.text = @"No files in Gallery";
-    label.textColor = [SPKUtils SPKColor_InstagramSecondaryText];
+    label.textColor = [SPKUtils SPKColor_InstagramPrimaryText];
     label.font = [UIFont systemFontOfSize:17 weight:UIFontWeightMedium];
     label.textAlignment = NSTextAlignmentCenter;
     [_emptyStateView addSubview:label];
@@ -664,12 +665,13 @@ typedef NS_ENUM(NSInteger, SPKGalleryViewMode) {
 
     UILabel *subtitle = [[UILabel alloc] initWithFrame:CGRectZero];
     subtitle.translatesAutoresizingMaskIntoConstraints = NO;
-    subtitle.text = @"Save media from the preview screen\nto see it here.";
-    subtitle.textColor = [SPKUtils SPKColor_InstagramTertiaryText];
+    subtitle.text = @"Media you save with Sparkle will appear here.";
+    subtitle.textColor = [SPKUtils SPKColor_InstagramSecondaryText];
     subtitle.font = [UIFont systemFontOfSize:14];
     subtitle.textAlignment = NSTextAlignmentCenter;
     subtitle.numberOfLines = 0;
     [_emptyStateView addSubview:subtitle];
+    _emptyStateSubtitle = subtitle;
 
     [NSLayoutConstraint activateConstraints:@[
         [_emptyStateView.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
@@ -682,8 +684,8 @@ typedef NS_ENUM(NSInteger, SPKGalleryViewMode) {
 
         [icon.topAnchor constraintEqualToAnchor:_emptyStateView.topAnchor],
         [icon.centerXAnchor constraintEqualToAnchor:_emptyStateView.centerXAnchor],
-        [icon.widthAnchor constraintEqualToConstant:64],
-        [icon.heightAnchor constraintEqualToConstant:64],
+        [icon.widthAnchor constraintEqualToConstant:96],
+        [icon.heightAnchor constraintEqualToConstant:96],
 
         [label.topAnchor constraintEqualToAnchor:icon.bottomAnchor
                                         constant:20],
@@ -707,11 +709,29 @@ typedef NS_ENUM(NSInteger, SPKGalleryViewMode) {
     self.emptyStateView.hidden = !isEmpty;
     self.collectionView.hidden = isEmpty;
 
-    if (isEmpty && hasFilters) {
-        self.emptyStateLabel.text = @"No matching files";
+    if (!isEmpty)
+        return;
+
+    NSString *query = [self.searchQuery stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    NSString *folderName = self.currentFolderPath.length > 0 ? [self.currentFolderPath lastPathComponent] : nil;
+
+    NSString *title;
+    NSString *subtitle;
+    if (query.length > 0) {
+        title = @"No results";
+        subtitle = @"No media matches your search.";
+    } else if (hasFilters) {
+        title = @"No matching files";
+        subtitle = @"Try adjusting your filters.";
+    } else if (folderName.length > 0) {
+        title = @"This folder is empty";
+        subtitle = [NSString stringWithFormat:@"Media you save to “%@” will appear here.", folderName];
     } else {
-        self.emptyStateLabel.text = @"No files in Gallery";
+        title = @"No files in Gallery";
+        subtitle = @"Media you save with Sparkle will appear here.";
     }
+    self.emptyStateLabel.text = title;
+    self.emptyStateSubtitle.text = subtitle;
 }
 
 #pragma mark - Fetched Results Controller

@@ -6,10 +6,12 @@
 FOUNDATION_EXPORT void SPKInstallLiquidGlassHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallProgressiveBlurHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallFeedActionButtonHooksIfEnabled(void);
+FOUNDATION_EXPORT void SPKInstallHeaderActionButtonHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallFollowingFeedHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallReelsActionButtonHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallStoriesActionButtonHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallMessagesActionButtonHooksIfEnabled(void);
+FOUNDATION_EXPORT void SPKInstallAggregatedMediaActionButtonHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallProfileActionButtonHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallProfilePhotoZoomHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallBackgroundRefreshHooksIfEnabled(void);
@@ -74,6 +76,7 @@ FOUNDATION_EXPORT void SPKInstallNoSuggestedChatsHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallChangeThemeConfirmHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallFollowRequestConfirmHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallDisableTypingStatusHooksIfEnabled(void);
+FOUNDATION_EXPORT void SPKInstallFullLastActiveHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallShhConfirmHooksIfNeeded(void);
 FOUNDATION_EXPORT void SPKInstallHideFriendsMapHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallKeepDeletedMessagesHooksIfEnabled(void);
@@ -88,6 +91,10 @@ FOUNDATION_EXPORT void SPKInstallDMAudioDownloadHooksIfNeeded(void);
 FOUNDATION_EXPORT void SPKInstallNotesActionsHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallHideDirectCallButtonsHooksIfEnabled(void);
 FOUNDATION_EXPORT void SPKInstallFixDuplicateNotificationsHooksIfNeeded(void);
+FOUNDATION_EXPORT void SPKInstallDisableAppIconGestureHooksIfEnabled(void);
+FOUNDATION_EXPORT void SPKInstallUnlockStoryPreviewHooksIfEnabled(void);
+FOUNDATION_EXPORT void SPKInstallHideViewerPlusButtonHooksIfEnabled(void);
+FOUNDATION_EXPORT void SPKInstallSearchStoryViewersHooksIfEnabled(void);
 
 // Master kill switch: when YES, suppress all feature hook installation, but
 // keep the home long-press shortcut so users can still reach Settings to turn
@@ -108,13 +115,18 @@ void SPKInstallLaunchCriticalHooks(void) {
         SPKInstallEssentialAccessHooks();
         return;
     }
+    // Progressive blur relies on UIScrollEdgeEffect (iOS 26+ only).
     if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"26.0")) {
         if ([SPKUtils getBoolPref:@"interface_progressive_blur"]) {
             SPKInstallProgressiveBlurHooksIfEnabled();
         }
-        if ([SPKUtils spk_isLiquidGlassEffectivelyEnabled]) {
-            SPKInstallLiquidGlassHooksIfEnabled();
-        }
+    }
+    // Liquid Glass surface hooks install on any iOS: the tab bar experiment
+    // gates reshape the bar into the floating pill even pre-26 (only the glass
+    // material is unavailable). The ObjC button hooks inside self-skip when
+    // their classes are absent, so this is safe on older systems.
+    if ([SPKUtils spk_isLiquidGlassEffectivelyEnabled]) {
+        SPKInstallLiquidGlassHooksIfEnabled();
     }
     SPKInstallTweakLaunchCriticalHooks();
     SPKInstallFollowingFeedHooksIfEnabled();
@@ -132,6 +144,7 @@ void SPKInstallFeedSurfaceHooksIfNeeded(void) {
     SPKInstallTweakFeedHooksIfNeeded();
     SPKInstallFeedFilteringFeedHooksIfEnabled();
     SPKInstallFeedActionButtonHooksIfEnabled();
+    SPKInstallHeaderActionButtonHooksIfEnabled();
     SPKInstallBackgroundRefreshHooksIfEnabled();
     SPKInstallLikeConfirmHooksIfNeeded();
     SPKInstallDisableFeedAutoplayHooksIfEnabled();
@@ -146,6 +159,7 @@ void SPKInstallFeedSurfaceHooksIfNeeded(void) {
     SPKInstallDisableHomeButtonRefreshHooksIfEnabled();
     SPKInstallCopyDescriptionHooksIfEnabled();
     SPKInstallHideMetricsHooksIfEnabled();
+    SPKInstallDisableAppIconGestureHooksIfEnabled();
 }
 
 void SPKInstallStorySurfaceHooksIfNeeded(void) {
@@ -163,6 +177,9 @@ void SPKInstallStorySurfaceHooksIfNeeded(void) {
     SPKInstallStickerInteractConfirmHooksIfEnabled();
     SPKInstallStoryPollVoteCountsHooksIfEnabled();
     SPKInstallDetailedColorPickerHooksIfEnabled();
+    SPKInstallUnlockStoryPreviewHooksIfEnabled();
+    SPKInstallHideViewerPlusButtonHooksIfEnabled();
+    SPKInstallSearchStoryViewersHooksIfEnabled();
 }
 
 void SPKInstallReelsSurfaceHooksIfNeeded(void) {
@@ -188,6 +205,7 @@ void SPKInstallMessagesSurfaceHooksIfNeeded(void) {
     }
     SPKInstallTweakMessagesHooksIfNeeded();
     SPKInstallMessagesActionButtonHooksIfEnabled();
+    SPKInstallAggregatedMediaActionButtonHooksIfEnabled();
     SPKInstallSeenButtonHooksIfNeeded();
     SPKInstallCreateGroupButtonControlHooksIfEnabled();
     SPKInstallConfirmSendHooksIfEnabled();
@@ -203,6 +221,7 @@ void SPKInstallMessagesSurfaceHooksIfNeeded(void) {
     SPKInstallChangeThemeConfirmHooksIfEnabled();
     SPKInstallFollowRequestConfirmHooksIfEnabled();
     SPKInstallDisableTypingStatusHooksIfEnabled();
+    SPKInstallFullLastActiveHooksIfEnabled();
     SPKInstallShhConfirmHooksIfNeeded();
     SPKInstallHideFriendsMapHooksIfEnabled();
     SPKInstallKeepDeletedMessagesHooksIfEnabled();

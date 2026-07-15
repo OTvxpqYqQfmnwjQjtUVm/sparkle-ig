@@ -651,6 +651,13 @@ static BOOL SPKPrefIsGlobalKey(NSString *key) {
             @"interface_nav_order",
             @"interface_swipe_tabs",
             @"interface_launch_tab",
+            // The Settings quick-access long-press is attached to tab-bar buttons
+            // as they're built during early launch — before the account session
+            // resolves — so a per-account effective key resolves against the
+            // wrong PK and the gesture sticks to whatever account owned the bar at
+            // launch. Kept global so it's reliable and matches the (global)
+            // gallery quick-access shortcut.
+            @"tools_settings_shortcut",
             // Main feed mode (For You / Following) is read during early feed
             // setup before the account resolves, so it stays global.
             @"feed_mode",
@@ -860,6 +867,40 @@ static id SPKPrefValueWithMasterOverlay(NSString *key) {
     }
 }
 
++ (NSDictionary<NSString *, NSString *> *)currentUserIdentity {
+    id session = [self activeUserSession];
+    if (!session)
+        return nil;
+    id user = nil;
+    @try {
+        user = [session valueForKey:@"user"];
+    } @catch (__unused NSException *e) {
+    }
+    if (!user)
+        return nil;
+
+    NSMutableDictionary<NSString *, NSString *> *info = [NSMutableDictionary dictionary];
+    NSString *pk = [self pkFromIGUser:user];
+    if (pk.length)
+        info[@"pk"] = pk;
+
+    id username = SPKObjectForSelector(user, @"username");
+    if ([username isKindOfClass:[NSString class]] && [(NSString *)username length])
+        info[@"username"] = username;
+
+    id fullName = SPKObjectForSelector(user, @"fullName");
+    if (![fullName isKindOfClass:[NSString class]] || ![(NSString *)fullName length])
+        fullName = SPKObjectForSelector(user, @"full_name");
+    if ([fullName isKindOfClass:[NSString class]] && [(NSString *)fullName length])
+        info[@"full_name"] = fullName;
+
+    NSURL *picURL = [self getBestProfilePictureURLForUser:user];
+    if (picURL.absoluteString.length)
+        info[@"profile_pic_url"] = picURL.absoluteString;
+
+    return info.count ? info : nil;
+}
+
 + (void)cleanCache {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSMutableArray<NSError *> *deletionErrors = [NSMutableArray array];
@@ -971,6 +1012,27 @@ static id SPKPrefValueWithMasterOverlay(NSString *key) {
 + (NSString *)formattedCacheSize {
     return [NSByteCountFormatter stringFromByteCount:(long long)[self cacheSizeBytes]
                                           countStyle:NSByteCountFormatterCountStyleFile];
+}
+
++ (NSString *)spk_localizedTimeComponent {
+    // `j` resolves to whichever hour cycle the locale/device prefers; if the
+    // resolved template keeps the AM/PM designator ("a") we're on a 12-hour
+    // clock, otherwise the device is set to 24-hour time.
+    NSString *resolved = [NSDateFormatter dateFormatFromTemplate:@"jmm"
+                                                         options:0
+                                                          locale:[NSLocale currentLocale]];
+    BOOL is24Hour = !resolved || [resolved rangeOfString:@"a"].location == NSNotFound;
+    return is24Hour ? @"HH:mm" : @"h:mm a";
+}
+
++ (NSString *)spk_localizedDateComponentIncludingYear:(BOOL)includeYear {
+    NSString *template = includeYear ? @"yMMMd" : @"MMMd";
+    NSString *resolved = [NSDateFormatter dateFormatFromTemplate:template
+                                                         options:0
+                                                          locale:[NSLocale currentLocale]];
+    if (resolved.length)
+        return resolved;
+    return includeYear ? @"MMM d, yyyy" : @"MMM d";  // safe fallback
 }
 
 + (NSString *)cacheAutoClearMode {
@@ -1301,6 +1363,11 @@ static id SPKPrefValueWithMasterOverlay(NSString *key) {
     return [self openURL:url];
 }
 
+// Returns a cleaned canonical Instagram URL, or `nil` when there is nothing to
+// sanitize (the input isn't an http/https Instagram URL). Callers MUST treat
+// nil as "leave the original untouched": `+URLWithString:` on iOS 17+ leniently
+// percent-encodes arbitrary text (captions, etc.) into a URL, so returning that
+// input back would mangle plain-text clipboard writes into %20/%E2%80%A2 noise.
 + (NSURL *)sanitizedInstagramShareURL:(NSURL *)url {
     if (!url)
         return nil;
@@ -1308,15 +1375,15 @@ static id SPKPrefValueWithMasterOverlay(NSString *key) {
         return nil;
 
     if (![url.scheme.lowercaseString isEqualToString:@"http"] && ![url.scheme.lowercaseString isEqualToString:@"https"]) {
-        return url;
+        return nil;
     }
     if (!SPKInstagramHostMatchesCanonical(url.host)) {
-        return url;
+        return nil;
     }
 
     NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
     if (!components) {
-        return url;
+        return nil;
     }
 
     NSArray<NSString *> *rawSegments = [components.path componentsSeparatedByString:@"/"];

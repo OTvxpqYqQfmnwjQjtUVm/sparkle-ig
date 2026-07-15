@@ -13,9 +13,16 @@ BOOL SPKPrefIsAvailable(NSString *key) {
     if (key.length == 0)
         return YES;
 
+    // The Liquid Glass pref and its tab bar mode also back the pre-iOS 26
+    // "Pill-Shaped Tab Bar" toggle — the tab bar experiment gates reshape the
+    // bar into the floating pill on any iOS, only the glass material is 26+.
     if ([key isEqualToString:kSPKPrefInterfaceLiquidGlass] ||
-        [key isEqualToString:kSPKPrefInterfaceLiquidGlassTabBarMode] ||
-        [key isEqualToString:kSPKPrefInterfaceProgressiveBlur]) {
+        [key isEqualToString:kSPKPrefInterfaceLiquidGlassTabBarMode]) {
+        return YES;
+    }
+
+    // Progressive blur relies on UIScrollEdgeEffect, which only exists on iOS 26+.
+    if ([key isEqualToString:kSPKPrefInterfaceProgressiveBlur]) {
         return SPKIsIOSVersionAtLeast(@"26.0");
     }
 

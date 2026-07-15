@@ -41,9 +41,18 @@ BOOL SPKChromeCanvasOwnsSecureField(UITextField *field);
 @property (nonatomic, assign) CGFloat symbolPointSize;
 @property (nonatomic, copy) UIColor *iconTint;
 @property (nonatomic, copy) UIColor *bubbleColor;
+/// Optional blur behind the glyph, hosted *inside* the button's secure bubble so
+/// it redacts on capture and morphs with the button (e.g. iOS 26 menu glass
+/// animation). Set `bubbleColor` to clear when using this. Nil removes it.
+@property (nonatomic, strong, nullable) UIVisualEffect *bubbleEffect;
 /// `symbolName` is SF-only. For IG-styled glyphs use `setIconResource:` or
 /// assign `iconView.image` directly with a baked image.
 @property (nonatomic, strong, readonly) UIImageView *iconView;
+
+/// Fired when the button's own context menu (long-press, `showsMenuAsPrimaryAction
+/// = NO`) is about to display — a hook for haptics/side effects on menu open.
+/// Nil (default) leaves standard behaviour untouched.
+@property (nonatomic, copy, nullable) void (^menuWillDisplayHandler)(void);
 
 /// IG-styled glyph via `+[SPKAssetUtils instagramIconNamed:]`. Clears `symbolName`.
 - (void)setIconResource:(NSString *)resourceName pointSize:(CGFloat)pointSize;

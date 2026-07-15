@@ -23,6 +23,15 @@ FOUNDATION_EXPORT void SPKCoreInstallLaunchCriticalHooks(void);
 FOUNDATION_EXPORT void SPKCoreInstallSurfaceHooks(SPKSurface surface);
 FOUNDATION_EXPORT void SPKCoreShowSettingsIfNeeded(UIWindow *window);
 
+/// YES until the user has ever completed first-run onboarding (i.e. `app_first_run`
+/// has never been stamped). Onboarding shows once, on the very first run — not on
+/// later version bumps; upgraders get the What's New sheet instead.
+FOUNDATION_EXPORT BOOL SPKCoreOnboardingPending(void);
+
+/// YES when the user has been onboarded but hasn't yet seen the What's New sheet for
+/// the current `SPKVersionString` (including upgraders who predate the feature).
+FOUNDATION_EXPORT BOOL SPKCoreWhatsNewPending(void);
+
 #ifdef __cplusplus
 }
 #endif

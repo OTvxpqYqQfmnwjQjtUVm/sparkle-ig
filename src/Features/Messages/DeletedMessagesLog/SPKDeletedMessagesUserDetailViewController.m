@@ -222,8 +222,8 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
 
         [self.emptyStateIcon.topAnchor constraintEqualToAnchor:self.emptyStateView.topAnchor],
         [self.emptyStateIcon.centerXAnchor constraintEqualToAnchor:self.emptyStateView.centerXAnchor],
-        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:72.0],
-        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:72.0],
+        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:96.0],
+        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:96.0],
 
         [self.emptyStateTitle.topAnchor constraintEqualToAnchor:self.emptyStateIcon.bottomAnchor
                                                        constant:18.0],
@@ -391,7 +391,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
     NSString *noun = isGroup ? @"Chat" : @"Sender";
 
     UIAction *pinAction = [UIAction actionWithTitle:[NSString stringWithFormat:@"%@ %@", self.group.isPinned ? @"Unpin" : @"Pin", noun]
-                                              image:[SPKAssetUtils instagramIconNamed:(self.group.isPinned ? @"pin_filled" : @"pin_outline") pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                              image:[SPKAssetUtils menuIconNamed:(self.group.isPinned ? @"pin_filled" : @"pin_outline")]
                                          identifier:nil
                                             handler:^(__unused UIAction *a) {
                                                 [SPKDeletedMessagesStorage setSenderPinned:!weakSelf.group.isPinned senderPK:weakSelf.group.flagKey ownerPK:weakSelf.ownerPK];
@@ -399,7 +399,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
                                             }];
 
     UIAction *blockAction = [UIAction actionWithTitle:[NSString stringWithFormat:@"%@ %@", self.group.isBlocked ? @"Unblock" : @"Block", noun]
-                                                image:[SPKAssetUtils instagramIconNamed:self.group.isBlocked ? @"circle" : @"block" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                image:[SPKAssetUtils menuIconNamed:self.group.isBlocked ? @"circle" : @"block"]
                                            identifier:nil
                                               handler:^(__unused UIAction *a) {
                                                   [SPKDeletedMessagesStorage setSenderBlocked:!weakSelf.group.isBlocked senderPK:weakSelf.group.flagKey ownerPK:weakSelf.ownerPK];
@@ -407,7 +407,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
                                               }];
 
     UIAction *deleteAction = [UIAction actionWithTitle:[NSString stringWithFormat:@"Delete %@ Log", noun]
-                                                 image:[SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                 image:[SPKAssetUtils menuIconNamed:@"trash"]
                                             identifier:nil
                                                handler:^(__unused UIAction *a) {
                                                    NSString *who = isGroup ? weakSelf.group.displayName
@@ -436,7 +436,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
     UIMenu *destructiveSection = [UIMenu menuWithTitle:@"" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:@[ deleteAction ]];
 
     UIAction *refreshAvatarsAction = [UIAction actionWithTitle:@"Refresh Profile Pictures"
-                                                         image:[SPKAssetUtils instagramIconNamed:@"user_circle" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                         image:[SPKAssetUtils menuIconNamed:@"user_circle"]
                                                     identifier:nil
                                                        handler:^(__unused UIAction *a) {
                                                            [[SPKAvatarCache shared] purge];
@@ -446,7 +446,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
     if (!isGroup && self.group.senderUsername.length) {
         NSString *username = self.group.senderUsername;
         UIAction *openProfileAction = [UIAction actionWithTitle:@"Open Profile"
-                                                          image:[SPKAssetUtils instagramIconNamed:@"user" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                          image:[SPKAssetUtils menuIconNamed:@"user"]
                                                      identifier:nil
                                                         handler:^(__unused UIAction *a) {
                                                             [SPKUtils openInstagramProfileForUsername:username];
@@ -685,7 +685,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
 
     if (message.text.length || message.previewText.length) {
         UIAction *copyAction = [UIAction actionWithTitle:@"Copy Text"
-                                                   image:[SPKAssetUtils instagramIconNamed:@"copy" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                   image:[SPKAssetUtils menuIconNamed:@"copy"]
                                               identifier:nil
                                                  handler:^(__unused UIAction *a) {
                                                      UIPasteboard.generalPasteboard.string = message.text ?: message.previewText;
@@ -697,7 +697,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
     NSURL *mediaURL = [self localOrRemoteURLForMessage:message];
     if (mediaURL) {
         UIAction *shareAction = [UIAction actionWithTitle:@"Share"
-                                                    image:[SPKAssetUtils instagramIconNamed:@"share" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                    image:[SPKAssetUtils menuIconNamed:@"share"]
                                                identifier:nil
                                                   handler:^(__unused UIAction *a) {
                                                       UIActivityViewController *vc = [[UIActivityViewController alloc] initWithActivityItems:@[ mediaURL ] applicationActivities:nil];
@@ -707,7 +707,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
 
         if (![mediaURL isFileURL]) {
             UIAction *copyLinkAction = [UIAction actionWithTitle:@"Copy Link"
-                                                           image:[SPKAssetUtils instagramIconNamed:@"link" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                           image:[SPKAssetUtils menuIconNamed:@"link"]
                                                       identifier:nil
                                                          handler:^(__unused UIAction *a) {
                                                              UIPasteboard.generalPasteboard.string = mediaURL.absoluteString;
@@ -718,7 +718,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
     }
 
     UIAction *deleteAction = [UIAction actionWithTitle:@"Delete"
-                                                 image:[SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                 image:[SPKAssetUtils menuIconNamed:@"trash"]
                                             identifier:nil
                                                handler:^(__unused UIAction *a) {
                                                    [SPKDeletedMessagesStorage deleteMessageId:message.messageId forOwnerPK:weakSelf.ownerPK];
@@ -751,7 +751,7 @@ static SPKDeletedMessageKind SPKDMDetailChipKindForIndex(NSInteger index) {
                                                                                  [SPKDeletedMessagesStorage deleteMessageId:message.messageId forOwnerPK:self.ownerPK];
                                                                                  completionHandler(YES);
                                                                              }];
-    deleteAction.image = [SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    deleteAction.image = [SPKAssetUtils menuIconNamed:@"trash"];
     deleteAction.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
     deleteAction.accessibilityLabel = @"Delete";
     return [UISwipeActionsConfiguration configurationWithActions:@[ deleteAction ]];

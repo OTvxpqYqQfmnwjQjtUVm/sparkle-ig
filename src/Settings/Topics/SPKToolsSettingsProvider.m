@@ -8,6 +8,8 @@
 #import "../../Shared/Settings/SPKSettingsLockManager.h"
 #import "../../Shared/UI/SPKIGAlertPresenter.h"
 #import "../../Utils.h"
+#import "../SPKOnboardingViewController.h"
+#import "../SPKWhatsNewViewController.h"
 #import "../SPKSettingsViewController.h"
 #import "../SPKTopicSettingsSupport.h"
 #import "SPKInterfaceSettingsProvider.h"
@@ -119,18 +121,32 @@ static NSDictionary *SPKSettingsLockSection(void) {
             [SPKSetting switchCellWithTitle:@"Quick Settings Access"
                                 defaultsKey:@"tools_settings_shortcut"
                             requiresRestart:YES],
+            [SPKSetting switchCellWithTitle:@"Shortcut Haptics"
+                                defaultsKey:@"tools_shortcut_haptics"],
             [SPKSetting switchCellWithTitle:@"Show Settings on App Launch"
                                 defaultsKey:@"tools_open_settings_on_launch"],
             [SPKSetting switchCellWithTitle:@"Disable All Settings"
                                 defaultsKey:@"tools_disable_all"
                             requiresRestart:YES],
-            [SPKSetting buttonCellWithTitle:@"Reset Onboarding Completion State"
+            [SPKSetting buttonCellWithTitle:@"Show Onboarding"
                                    subtitle:@""
                                        icon:nil
                                      action:^(void) {
-                                         [[NSUserDefaults standardUserDefaults] removeObjectForKey:@"app_first_run"];
-                                         [SPKUtils showRestartConfirmation];
+                                         [SPKOnboardingViewController presentFromViewController:nil onFinish:nil];
                                      }],
+            [SPKSetting buttonCellWithTitle:@"Show What's New"
+                                   subtitle:@""
+                                       icon:nil
+                                     action:^(void) {
+                                         [SPKWhatsNewViewController presentFromViewController:nil onFinish:nil];
+                                     }],
+        ],
+                        @"1. Opens settings when long pressing the Home tab or the next visible tab if the Home tab is hidden.\n"
+                        @"2. Haptic feedback when the settings shortcut gesture fires.\n"
+                        @"3. Open Sparkle settings automatically every time Instagram launches.\n"
+                        @"4. Suppress every Sparkle feature hook, leaving only the shortcut to reach this screen. Use to isolate crashes."),
+
+        SPKTopicSection(@"", @[
             [SPKSetting buttonCellWithTitle:@"Reset Safe Startup Mode"
                                    subtitle:@""
                                        icon:nil
@@ -138,23 +154,49 @@ static NSDictionary *SPKSettingsLockSection(void) {
                                          SPKStabilityGuardReset();
                                          [SPKUtils showRestartConfirmation];
                                      }],
-        ],
-                        @"1. Quick Settings Access opens settings when long pressing the Home tab or the next visible tab if the Home tab is hidden.\n"
-                        @"5. Reset Safe Startup Mode clears failed-launch counters and temporary hook suppression."),
+#if SPK_DEV
+            // Dev builds only: wipe the intro-sheet state so the onboarding /
+            // What's New gating fires from scratch on the next launch.
+            [SPKSetting buttonCellWithTitle:@"[DEV] Reset Intro State"
+                                   subtitle:@""
+                                       icon:nil
+                                     action:^(void) {
+                                         NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+                                         [defaults removeObjectForKey:@"app_first_run"];
+                                         [defaults removeObjectForKey:@"app_last_whatsnew_version"];
+                                         [SPKUtils showRestartConfirmation];
+                                     }],
+#endif
+        ], @"Clears failed-launch counters and temporary hook suppression. Tap this button if it appears as if features aren't enabled."),
         SPKSettingsLockSection(),
-        SPKTopicSection(@"Instagram", @[
-            [SPKSetting switchCellWithTitle:@"Hide TestFlight Popup"
-                                defaultsKey:@"tools_hide_testflight_popup"
-                            requiresRestart:YES],
-            [SPKSetting switchCellWithTitle:@"Fix Duplicate Notifications"
-                                defaultsKey:@"tools_fix_duplicate_notifications"],
-            [SPKSetting switchCellWithTitle:@"Disable Safe Mode"
-                                defaultsKey:@"tools_disable_safe_mode"],
-        ],
-                        @"1. Suppresses the Instagram Beta update popup.\n"
-                        @"2. Drops the duplicate in-app banner sideloaded Instagram posts while the notification extension is already delivering the same push. Only acts while the app is foregrounded.\n"
-                        @"3. Makes Instagram not reset settings after subsequent crashes. Use at your own risk."),
     ]];
+
+    // The TestFlight/Beta popup only appears on sideloaded (re-signed) installs.
+    // On jailbroken installs Instagram runs off its genuine App Store receipt, so
+    // the nag never shows — hide the toggle there rather than expose a no-op.
+    NSMutableArray *instagramCells = [NSMutableArray array];
+#if SPK_SIDELOAD
+    [instagramCells addObject:[SPKSetting switchCellWithTitle:@"Hide TestFlight Popup"
+                                                  defaultsKey:@"tools_hide_testflight_popup"
+                                              requiresRestart:YES]];
+#endif
+    [instagramCells addObject:[SPKSetting switchCellWithTitle:@"Fix Duplicate Notifications"
+                                                  defaultsKey:@"tools_fix_duplicate_notifications"]];
+    [instagramCells addObject:[SPKSetting switchCellWithTitle:@"Disable Safe Mode"
+                                                  defaultsKey:@"tools_disable_safe_mode"]];
+
+#if SPK_SIDELOAD
+    NSString *instagramFooter =
+        @"1. Suppresses the Instagram Beta update popup.\n"
+        @"2. Drops the duplicate in-app banner sideloaded Instagram posts while the notification extension is already delivering the same push. Only acts while the app is foregrounded.\n"
+        @"3. Makes Instagram not reset settings after subsequent crashes. Use at your own risk.";
+#else
+    NSString *instagramFooter =
+        @"1. Drops the duplicate in-app banner sideloaded Instagram posts while the notification extension is already delivering the same push. Only acts while the app is foregrounded.\n"
+        @"2. Makes Instagram not reset settings after subsequent crashes. Use at your own risk.";
+#endif
+
+    [sections addObject:SPKTopicSection(@"Instagram", instagramCells, instagramFooter)];
 
     return SPKTopicNavigationSetting(@"Tools", @"toolbox", 24.0, sections);
 }

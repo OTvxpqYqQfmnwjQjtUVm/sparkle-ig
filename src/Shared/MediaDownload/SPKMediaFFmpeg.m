@@ -279,23 +279,36 @@ static NSString *SPKFFmpegPresetForSpeed(NSString *speed) {
     return preset.length > 0 ? preset : @"medium";
 }
 
+// Minimum/maximum ABR target for the default re-encode, in bits/sec. Mirrors the
+// clamp SPKFFmpegAdvancedDefaultBitrateKbps applies in the advanced path (2500 –
+// 50000 kbps).
+static const NSInteger kSPKFFmpegDefaultMinVideoBitrate = 2500000;
+static const NSInteger kSPKFFmpegDefaultMaxVideoBitrate = 50000000;
+
 // Rate-control tokens for the default (non-advanced) encoder. When the source
 // bitrate is known, target it with single-pass ABR (bitrate-capped) so the
 // re-encode lands close to the source's — and therefore the sheet's estimated —
 // size. Without this, libx264's implicit CRF 23 chases the source's detail and
 // balloons an already-compressed rep (e.g. a ~100 kbps AV1 tier) into a
-// multi-megabyte H.264 file. `sourceBitrate` is the manifest bandwidth
-// (bits/sec); 0 falls back to plain CRF. Encoding effort still comes from the
-// "Encoding speed" preset, applied separately by the caller.
+// multi-megabyte H.264 file.
+//
+// The target is FLOORED at 2.5 Mbps (and capped at 50 Mbps), matching the
+// advanced path. IG serves videos as AV1/HEVC, whose manifest bandwidth
+// can be far below what H.264 needs for equal quality. The floor keeps such reps watchable while leaving the
+// common case (a healthy multi-Mbps manifest) exactly as before. `sourceBitrate`
+// is the manifest bandwidth (bits/sec); 0 falls back to plain CRF. Encoding
+// effort still comes from the "Encoding speed" preset, applied by the caller.
 static NSArray<NSString *> *SPKFFmpegRateControlTokens(NSInteger sourceBitrate) {
     if (sourceBitrate <= 0) {
         return @[ @"-crf", @"23" ];
     }
-    NSInteger maxrate = (NSInteger)llround(sourceBitrate * 1.2);
+    NSInteger target = MIN(MAX(sourceBitrate, kSPKFFmpegDefaultMinVideoBitrate),
+                           kSPKFFmpegDefaultMaxVideoBitrate);
+    NSInteger maxrate = (NSInteger)llround(target * 1.2);
     return @[
-        @"-b:v", [NSString stringWithFormat:@"%ld", (long)sourceBitrate],
+        @"-b:v", [NSString stringWithFormat:@"%ld", (long)target],
         @"-maxrate", [NSString stringWithFormat:@"%ld", (long)maxrate],
-        @"-bufsize", [NSString stringWithFormat:@"%ld", (long)(sourceBitrate * 2)]
+        @"-bufsize", [NSString stringWithFormat:@"%ld", (long)(target * 2)]
     ];
 }
 
@@ -1343,16 +1356,63 @@ static void SPKFFmpegRunMergeAttempts(NSArray<NSDictionary<NSString *, id> *> *a
 
 - (void)reloadFiles {
     self.files = SPKFFmpegSortedLogFiles().reverseObjectEnumerator.allObjects ?: @[];
-    self.tableView.backgroundView = nil;
-    if (self.files.count == 0) {
-        UILabel *label = [[UILabel alloc] init];
-        label.text = @"No encoding logs yet.";
-        label.textAlignment = NSTextAlignmentCenter;
-        label.textColor = [SPKUtils SPKColor_InstagramSecondaryText];
-        label.numberOfLines = 0;
-        self.tableView.backgroundView = label;
-    }
+    self.tableView.backgroundView = self.files.count == 0 ? [self emptyStateView] : nil;
     [self.tableView reloadData];
+}
+
+- (UIView *)emptyStateView {
+    UIView *container = [UIView new];
+
+    UIView *content = [UIView new];
+    content.translatesAutoresizingMaskIntoConstraints = NO;
+    [container addSubview:content];
+
+    UIImageView *icon = [[UIImageView alloc] initWithImage:[SPKAssetUtils instagramIconNamed:@"empty" pointSize:96 renderingMode:UIImageRenderingModeAlwaysTemplate]];
+    icon.translatesAutoresizingMaskIntoConstraints = NO;
+    icon.contentMode = UIViewContentModeScaleAspectFit;
+    icon.tintColor = [SPKUtils SPKColor_InstagramTertiaryText];
+    [content addSubview:icon];
+
+    UILabel *title = [UILabel new];
+    title.translatesAutoresizingMaskIntoConstraints = NO;
+    title.font = [UIFont systemFontOfSize:17 weight:UIFontWeightSemibold];
+    title.textColor = [SPKUtils SPKColor_InstagramPrimaryText];
+    title.textAlignment = NSTextAlignmentCenter;
+    title.numberOfLines = 0;
+    title.text = @"No encoding logs yet";
+    [content addSubview:title];
+
+    UILabel *subtitle = [UILabel new];
+    subtitle.translatesAutoresizingMaskIntoConstraints = NO;
+    subtitle.font = [UIFont systemFontOfSize:14];
+    subtitle.textColor = [SPKUtils SPKColor_InstagramSecondaryText];
+    subtitle.textAlignment = NSTextAlignmentCenter;
+    subtitle.numberOfLines = 0;
+    subtitle.text = @"FFmpeg runs will appear here after merge attempts.";
+    [content addSubview:subtitle];
+
+    [NSLayoutConstraint activateConstraints:@[
+        [content.centerXAnchor constraintEqualToAnchor:container.centerXAnchor],
+        [content.centerYAnchor constraintEqualToAnchor:container.centerYAnchor constant:-30],
+        [content.leadingAnchor constraintGreaterThanOrEqualToAnchor:container.leadingAnchor constant:40],
+        [content.trailingAnchor constraintLessThanOrEqualToAnchor:container.trailingAnchor constant:-40],
+
+        [icon.topAnchor constraintEqualToAnchor:content.topAnchor],
+        [icon.centerXAnchor constraintEqualToAnchor:content.centerXAnchor],
+        [icon.widthAnchor constraintEqualToConstant:96],
+        [icon.heightAnchor constraintEqualToConstant:96],
+
+        [title.topAnchor constraintEqualToAnchor:icon.bottomAnchor constant:18],
+        [title.leadingAnchor constraintEqualToAnchor:content.leadingAnchor],
+        [title.trailingAnchor constraintEqualToAnchor:content.trailingAnchor],
+
+        [subtitle.topAnchor constraintEqualToAnchor:title.bottomAnchor constant:6],
+        [subtitle.leadingAnchor constraintEqualToAnchor:content.leadingAnchor],
+        [subtitle.trailingAnchor constraintEqualToAnchor:content.trailingAnchor],
+        [subtitle.bottomAnchor constraintEqualToAnchor:content.bottomAnchor],
+    ]];
+
+    return container;
 }
 
 - (void)shareAllTapped {
@@ -1397,6 +1457,9 @@ static void SPKFFmpegRunMergeAttempts(NSArray<NSDictionary<NSString *, id> *> *a
     NSNumber *size = attributes[NSFileSize];
 
     cell.backgroundColor = [SPKUtils SPKColor_InstagramSecondaryBackground];
+    UIView *selectedBackground = [[UIView alloc] initWithFrame:CGRectZero];
+    selectedBackground.backgroundColor = [SPKUtils SPKColor_InstagramPressedBackground];
+    cell.selectedBackgroundView = selectedBackground;
     cell.textLabel.textColor = [SPKUtils SPKColor_InstagramPrimaryText];
     cell.detailTextLabel.textColor = [SPKUtils SPKColor_InstagramSecondaryText];
     cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;

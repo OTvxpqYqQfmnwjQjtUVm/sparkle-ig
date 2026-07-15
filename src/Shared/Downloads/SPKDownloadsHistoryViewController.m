@@ -372,8 +372,8 @@ typedef NS_ENUM(NSUInteger, SPKDownloadsHistoryRowKind) {
     self.chipBar.translatesAutoresizingMaskIntoConstraints = NO;
     self.chipBar.delegate = self;
     [self.chipBar setItems:@[ @"All", @"Active", @"Queued", @"Failed", @"Recent" ]
-                   symbols:@[ @"download", @"play_filled", @"clock", @"error", @"circle_check" ]
-           selectedSymbols:@[ @"download", @"play_filled", @"clock", @"error_filled", @"circle_check_filled" ]];
+                   symbols:@[ @"download", @"play", @"clock", @"error", @"circle_check" ]
+           selectedSymbols:@[ @"download_filled", @"play_filled", @"clock_filled", @"error_filled", @"circle_check_filled" ]];
     self.chipBar.selectedIndex = 0;
     [self.view addSubview:self.chipBar];
 
@@ -577,8 +577,8 @@ typedef NS_ENUM(NSUInteger, SPKDownloadsHistoryRowKind) {
 
         [self.emptyStateIcon.topAnchor constraintEqualToAnchor:self.emptyStateView.topAnchor],
         [self.emptyStateIcon.centerXAnchor constraintEqualToAnchor:self.emptyStateView.centerXAnchor],
-        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:72],
-        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:72],
+        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:96],
+        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:96],
 
         [self.emptyStateTitle.topAnchor constraintEqualToAnchor:self.emptyStateIcon.bottomAnchor
                                                        constant:18],
@@ -630,7 +630,7 @@ typedef NS_ENUM(NSUInteger, SPKDownloadsHistoryRowKind) {
 - (void)clearFinished {
     [SPKIGAlertPresenter presentAlertFromViewController:self
                                                   title:@"Clear Finished Downloads"
-                                                message:@"Active and queued downloads are kept."
+                                                message:@"Removes finished entries and their staged preview copies. Active and queued downloads are kept; media saved to Photos or the Gallery is not affected."
                                                 actions:@[
                                                     [SPKIGAlertAction actionWithTitle:@"Cancel"
                                                                                 style:SPKIGAlertActionStyleCancel
@@ -655,13 +655,13 @@ typedef NS_ENUM(NSUInteger, SPKDownloadsHistoryRowKind) {
     // Navigation actions (top)
     NSMutableArray<UIAction *> *nav = [NSMutableArray array];
     [nav addObject:[UIAction actionWithTitle:@"Open Gallery"
-                                       image:[SPKAssetUtils instagramIconNamed:@"sparkle_gallery" pointSize:22 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                       image:[SPKAssetUtils menuIconNamed:@"sparkle_gallery"]
                                   identifier:nil
                                      handler:^(__unused UIAction *a) {
                                          [SPKGalleryViewController presentGallery];
                                      }]];
     [nav addObject:[UIAction actionWithTitle:@"Open Photos App"
-                                       image:[SPKAssetUtils instagramIconNamed:@"photo_gallery" pointSize:22 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                       image:[SPKAssetUtils menuIconNamed:@"photo_gallery"]
                                   identifier:nil
                                      handler:^(__unused UIAction *a) {
                                          [SPKUtils openPhotosApp];
@@ -672,7 +672,7 @@ typedef NS_ENUM(NSUInteger, SPKDownloadsHistoryRowKind) {
     NSMutableArray<UIAction *> *destructive = [NSMutableArray array];
 
     UIAction *clearAction = [UIAction actionWithTitle:@"Clear Finished"
-                                                image:[SPKAssetUtils instagramIconNamed:@"trash" pointSize:22 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                image:[SPKAssetUtils menuIconNamed:@"trash"]
                                            identifier:nil
                                               handler:^(__unused UIAction *a) {
                                                   [weakSelf clearFinished];
@@ -689,7 +689,7 @@ typedef NS_ENUM(NSUInteger, SPKDownloadsHistoryRowKind) {
     }
     if (hasActive) {
         UIAction *cancelAll = [UIAction actionWithTitle:@"Cancel All Active"
-                                                  image:[SPKAssetUtils instagramIconNamed:@"xmark" pointSize:22 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                  image:[SPKAssetUtils menuIconNamed:@"xmark"]
                                              identifier:nil
                                                 handler:^(__unused UIAction *a) {
                                                     [SPKDownloadService confirmCancelAllActive];
@@ -1146,7 +1146,7 @@ static void SPKApplyStatusBadge(SPKDownloadHistoryCell *cell, SPKDownloadState s
                                                                                   [[SPKDownloadService shared] retryJobID:row.job.jobID];
                                                                               done(YES);
                                                                           }];
-        retry.image = [SPKAssetUtils instagramIconNamed:@"arrow_cw" pointSize:22 renderingMode:UIImageRenderingModeAlwaysTemplate];
+        retry.image = [SPKAssetUtils menuIconNamed:@"arrow_cw"];
         retry.backgroundColor = [SPKUtils SPKColor_InstagramBlue];
         retry.accessibilityLabel = @"Retry";
         [actions addObject:retry];
@@ -1165,7 +1165,7 @@ static void SPKApplyStatusBadge(SPKDownloadHistoryCell *cell, SPKDownloadState s
                                                                                    [[SPKDownloadService shared] cancelJobID:row.job.jobID];
                                                                                done(YES);
                                                                            }];
-        cancel.image = [SPKAssetUtils instagramIconNamed:@"xmark" pointSize:22 renderingMode:UIImageRenderingModeAlwaysTemplate];
+        cancel.image = [SPKAssetUtils menuIconNamed:@"xmark"];
         cancel.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
         cancel.accessibilityLabel = @"Cancel";
         [actions addObject:cancel];
@@ -1180,7 +1180,7 @@ static void SPKApplyStatusBadge(SPKDownloadHistoryCell *cell, SPKDownloadState s
                                                                            [[SPKDownloadService shared] removeJobID:row.job.jobID];
                                                                            done(YES);
                                                                        }];
-    remove.image = [SPKAssetUtils instagramIconNamed:@"trash" pointSize:22 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    remove.image = [SPKAssetUtils menuIconNamed:@"trash"];
     remove.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
     remove.accessibilityLabel = @"Remove";
     [actions addObject:remove];
@@ -1196,7 +1196,7 @@ static void SPKApplyStatusBadge(SPKDownloadHistoryCell *cell, SPKDownloadState s
                                                                              UIPasteboard.generalPasteboard.string = link;
                                                                              done(YES);
                                                                          }];
-        copy.image = [SPKAssetUtils instagramIconNamed:@"copy" pointSize:22 renderingMode:UIImageRenderingModeAlwaysTemplate];
+        copy.image = [SPKAssetUtils menuIconNamed:@"copy"];
         copy.backgroundColor = [SPKUtils SPKColor_InstagramSecondaryText];
         copy.accessibilityLabel = @"Copy Link";
         [actions addObject:copy];

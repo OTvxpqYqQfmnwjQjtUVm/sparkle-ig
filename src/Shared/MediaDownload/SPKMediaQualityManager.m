@@ -4,6 +4,7 @@
 #import "../../AssetUtils.h"
 #import "../../InstagramHeaders.h"
 #import "../../Settings/SPKSetting.h"
+#import "../../Settings/SPKSettingsTransferManager.h"
 #import "../../Settings/SPKSettingsViewController.h"
 #import "../../Settings/SPKTopicSettingsSupport.h"
 #import "../../Utils.h"
@@ -699,9 +700,11 @@ static NSString *SPKMediaQualityInfoForOption(SPKMediaOption *option) {
 }
 
 static UIImage *SPKMediaIcon(NSString *name, CGFloat pointSize) {
-    return [SPKAssetUtils instagramIconNamed:name
-                                   pointSize:pointSize
-                               renderingMode:UIImageRenderingModeAlwaysTemplate];
+    // menuIconNamed: avoids the UIGraphicsImageRenderer downscale that iOS 16's
+    // UIMenu renders blank for vector-backed (.svg) glyphs. All callers use the
+    // 22pt menu size; the button callers are image views that render it fine.
+    (void)pointSize;
+    return [SPKAssetUtils menuIconNamed:name];
 }
 
 static CGFloat const kSPKMediaOptionIconPointSize = 22.0;
@@ -1656,6 +1659,39 @@ static NSString *SPKMediaCodecBadge(NSString *codec) {
                     @"Fast Start moves MP4 metadata to the beginning of the "
                     @"file, allowing the video to start playing immediately "
                     @"when shared online or streamed.")];
+
+        __weak typeof(self) weakSelf = self;
+        SPKSetting *resetEncoding = 
+            [SPKSetting buttonCellWithTitle:@"Reset Encoding Settings"
+                                   subtitle:nil
+                                       icon:SPKSettingsIcon(@"arrow_ccw")
+                                     action:^{
+                                        [[SPKSettingsTransferManager sharedManager]
+                                            resetConfigurationGroupFromController:weakSelf
+                                                                            title:@"Reset Encoding Settings"
+                                                                          message:@"This restores every advanced encoding option to its default value. Advanced Encoding stays on."
+                                                                     confirmTitle:@"Reset"
+                                                                            keys:@[
+                                                                                @"downloads_encoding_speed",
+                                                                                @"downloads_encoding_vid_codec",
+                                                                                @"downloads_encoding_preset",
+                                                                                @"downloads_encoding_h264_profile",
+                                                                                @"downloads_encoding_h264_level",
+                                                                                @"downloads_encoding_crf",
+                                                                                @"downloads_encoding_vid_bitrate_kbps",
+                                                                                @"downloads_encoding_max_resolution",
+                                                                                @"downloads_encoding_audio_bitrate_kbps",
+                                                                                @"downloads_encoding_audio_channels",
+                                                                                @"downloads_encoding_pixel_format",
+                                                                                @"downloads_encoding_faststart"
+                                                                            ]
+                                                                          onReset:^{
+                                                                              [weakSelf replaceSections:[weakSelf buildSections]];
+                                                                          }];
+                                        }];
+        resetEncoding.tintColor = [SPKUtils SPKColor_InstagramDestructive];
+        resetEncoding.iconTintColor = [SPKUtils SPKColor_InstagramDestructive];
+        [sections addObject:SPKTopicSection(@"", @[ resetEncoding ], nil)];
 
         SPKSetting *ffmpegInfo = [SPKSetting
             linkCellWithTitle:@"About FFmpeg Encoding"

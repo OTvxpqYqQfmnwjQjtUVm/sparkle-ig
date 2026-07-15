@@ -2,6 +2,7 @@
 #import "../../../AssetUtils.h"
 #import "../../../Networking/SPKInstagramAPI.h"
 #import "../../../Shared/Avatars/SPKAvatarCache.h"
+#import "../../../Shared/UI/SPKIGAlertPresenter.h"
 #import "../../../Shared/UI/SPKMediaChrome.h"
 #import "../../../Utils.h"
 #import "../../../Shared/Avatars/SPKAvatarView.h"
@@ -354,7 +355,7 @@ typedef NS_ENUM(NSInteger, SPKPASortMode) {
     self.emptyStateView.hidden = YES;
     [self.view addSubview:self.emptyStateView];
 
-    self.emptyStateIcon = [[UIImageView alloc] initWithImage:[SPKAssetUtils instagramIconNamed:@"promote_empty" pointSize:72.0 renderingMode:UIImageRenderingModeAlwaysTemplate]];
+    self.emptyStateIcon = [[UIImageView alloc] initWithImage:[SPKAssetUtils instagramIconNamed:@"promote_empty" pointSize:96.0 renderingMode:UIImageRenderingModeAlwaysTemplate]];
     self.emptyStateIcon.translatesAutoresizingMaskIntoConstraints = NO;
     self.emptyStateIcon.contentMode = UIViewContentModeScaleAspectFit;
     self.emptyStateIcon.tintColor = [SPKUtils SPKColor_InstagramTertiaryText];
@@ -387,8 +388,8 @@ typedef NS_ENUM(NSInteger, SPKPASortMode) {
 
         [self.emptyStateIcon.topAnchor constraintEqualToAnchor:self.emptyStateView.topAnchor],
         [self.emptyStateIcon.centerXAnchor constraintEqualToAnchor:self.emptyStateView.centerXAnchor],
-        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:72.0],
-        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:72.0],
+        [self.emptyStateIcon.widthAnchor constraintEqualToConstant:96.0],
+        [self.emptyStateIcon.heightAnchor constraintEqualToConstant:96.0],
 
         [self.emptyStateTitle.topAnchor constraintEqualToAnchor:self.emptyStateIcon.bottomAnchor
                                                        constant:18.0],
@@ -414,13 +415,51 @@ typedef NS_ENUM(NSInteger, SPKPASortMode) {
 - (UIMenu *)moreMenu {
     __weak typeof(self) weakSelf = self;
     UIAction *refreshAvatars = [UIAction actionWithTitle:@"Refresh Profile Pictures"
-                                                   image:[SPKAssetUtils instagramIconNamed:@"user_circle" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate]
+                                                   image:[SPKAssetUtils menuIconNamed:@"user_circle"]
                                               identifier:nil
                                                  handler:^(__unused UIAction *action) {
                                                      [[SPKAvatarCache shared] purge];
                                                      [weakSelf.tableView reloadData];
                                                  }];
-    return [UIMenu menuWithTitle:@"" children:@[ refreshAvatars ]];
+
+    NSMutableArray<UIMenuElement *> *children = [NSMutableArray arrayWithObject:refreshAvatars];
+
+    // Visited history is the only mutable-in-bulk list; offer a destructive clear.
+    if (self.kind == SPKPAListKindVisited) {
+        UIAction *clearHistory = [UIAction actionWithTitle:@"Clear History"
+                                                     image:[SPKAssetUtils menuIconNamed:@"trash"]
+                                                identifier:nil
+                                                   handler:^(__unused UIAction *action) {
+                                                       [weakSelf confirmClearHistory];
+                                                   }];
+        clearHistory.attributes = UIMenuElementAttributesDestructive;
+        [children addObject:[UIMenu menuWithTitle:@"" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:@[ clearHistory ]]];
+    }
+
+    return [UIMenu menuWithTitle:@"" children:children];
+}
+
+- (void)confirmClearHistory {
+    __weak typeof(self) weakSelf = self;
+    [SPKIGAlertPresenter presentAlertFromViewController:self
+                                                  title:@"Clear Visited History"
+                                                message:@"This removes every profile from your visited history. This cannot be undone."
+                                                actions:@[
+                                                    [SPKIGAlertAction actionWithTitle:@"Cancel"
+                                                                                style:SPKIGAlertActionStyleCancel
+                                                                              handler:nil],
+                                                    [SPKIGAlertAction actionWithTitle:@"Clear History"
+                                                                                style:SPKIGAlertActionStyleDestructive
+                                                                              handler:^{
+                                                                                  typeof(self) strongSelf = weakSelf;
+                                                                                  if (!strongSelf)
+                                                                                      return;
+                                                                                  if (strongSelf.onClearHistory)
+                                                                                      strongSelf.onClearHistory();
+                                                                                  strongSelf.allVisits = @[];
+                                                                                  [strongSelf applyFilterAndSort];
+                                                                              }],
+                                                ]];
 }
 
 - (UIMenu *)sortMenu {
@@ -577,11 +616,11 @@ typedef NS_ENUM(NSInteger, SPKPASortMode) {
     if (!isEmpty)
         return;
     if (self.searchText.length) {
-        self.emptyStateIcon.image = [SPKAssetUtils instagramIconNamed:@"promote_empty" pointSize:72.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+        self.emptyStateIcon.image = [SPKAssetUtils instagramIconNamed:@"promote_empty" pointSize:96.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
         self.emptyStateTitle.text = @"No matches";
         self.emptyStateSubtitle.text = @"No accounts match your search.";
     } else {
-        self.emptyStateIcon.image = [SPKAssetUtils instagramIconNamed:@"promote_empty" pointSize:72.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+        self.emptyStateIcon.image = [SPKAssetUtils instagramIconNamed:@"promote_empty" pointSize:96.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
         self.emptyStateTitle.text = @"Nothing here";
         self.emptyStateSubtitle.text = @"There are no accounts in this list.";
     }
@@ -826,7 +865,7 @@ static NSString *SPKPARelativeDate(NSDate *date) {
                                                                         [weakSelf removeVisit:visit];
                                                                         done(YES);
                                                                     }];
-    del.image = [SPKAssetUtils instagramIconNamed:@"trash" pointSize:22.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
+    del.image = [SPKAssetUtils menuIconNamed:@"trash"];
     del.backgroundColor = [SPKUtils SPKColor_InstagramDestructive];
     del.accessibilityLabel = @"Remove";
     return [UISwipeActionsConfiguration configurationWithActions:@[ del ]];

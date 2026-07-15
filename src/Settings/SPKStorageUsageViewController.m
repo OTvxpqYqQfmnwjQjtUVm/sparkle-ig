@@ -55,7 +55,7 @@
                                             icon:SPKSettingsIcon(@"download")],
                   [SPKSetting valueCellWithTitle:@"Deleted Messages"
                                         subtitle:[self formattedKey:@"deletedMessages"]
-                                            icon:SPKSettingsIcon(@"messages")],
+                                            icon:SPKSettingsIcon(@"channels")],
                   [SPKSetting valueCellWithTitle:@"Profile Analyzer"
                                         subtitle:[self formattedKey:@"profileAnalyzer"]
                                             icon:SPKSettingsIcon(@"profile_analyzer")],

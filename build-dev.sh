@@ -19,7 +19,7 @@ then
 else
     # Built tweak and deploy to live container
     make clean
-    make DEV=1
+    make DEV=1 SIDELOAD=1
 
     # Change framework locations to @rpath
     install_name_tool -change "/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate" \

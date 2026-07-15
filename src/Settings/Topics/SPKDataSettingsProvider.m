@@ -73,7 +73,7 @@
                                                       }];
     galleryRow.userInfo = @{@"checkmarked" : @(self.includeGallery)};
 
-    SPKSetting *deletedMessagesRow = [SPKSetting buttonCellWithTitle:@"Messages Logs"
+    SPKSetting *deletedMessagesRow = [SPKSetting buttonCellWithTitle:@"Deleted Messages"
                                                             subtitle:@""
                                                                 icon:SPKSettingsIcon(@"channels")
                                                               action:^{
@@ -94,7 +94,9 @@
     profileAnalyzerRow.userInfo = @{@"checkmarked" : @(self.includeProfileAnalyzer)};
 
     NSString *footer = self.importMode
-                           ? @"Preferences are restored, replacing your current values for the imported scope. Gallery, messages and analyzer data are merged in — existing items are never deleted. A restart prompt appears only when preferences change."
+                           ? @"Preferences are restored, replacing your current values for the imported scope. "
+                             @"Gallery, Deleted Messages, and Profile Analyzer data are merged in — existing items are never deleted. "
+                             @"A restart prompt appears only when preferences change."
                            : nil;
     NSArray *sections = @[ SPKTopicSection(@"", @[ settingsRow, galleryRow, deletedMessagesRow, profileAnalyzerRow ], footer) ];
     [self replaceSections:sections];
@@ -172,7 +174,7 @@
                                                          viewController:[[SPKSettingsTransferSelectionViewController alloc] initWithImportMode:YES]],
                                     [SPKUtils SPKColor_InstagramPrimaryText])
         ],
-                        @"Choose to export or import settings, Gallery media, unsent messages logs, and Profile Analyzer data."),
+                        @"Choose to export or import settings, Gallery media, Deleted Messages, and Profile Analyzer data."),
         SPKTopicSection(@"Reset", @[
             resetAllSettings
         ],

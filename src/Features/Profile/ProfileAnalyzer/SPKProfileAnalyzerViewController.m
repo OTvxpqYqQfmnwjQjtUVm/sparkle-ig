@@ -42,7 +42,6 @@ typedef NS_ENUM(NSInteger, SPKPACategory) {
 @property (nonatomic, strong) UILabel *nameLabel;
 @property (nonatomic, strong) UILabel *usernameLabel;
 @property (nonatomic, strong) UIStackView *statsRow;
-@property (nonatomic, strong) UILabel *scanDateLabel;
 @property (nonatomic, strong) SPKProgressPillButton *scanButton;
 @end
 
@@ -78,13 +77,6 @@ typedef NS_ENUM(NSInteger, SPKPACategory) {
     _statsRow.distribution = UIStackViewDistributionFillEqually;
     _statsRow.alignment = UIStackViewAlignmentCenter;
     [self addSubview:_statsRow];
-
-    _scanDateLabel = [UILabel new];
-    _scanDateLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    _scanDateLabel.font = [UIFont systemFontOfSize:12.0];
-    _scanDateLabel.textColor = [SPKUtils SPKColor_InstagramTertiaryText];
-    _scanDateLabel.textAlignment = NSTextAlignmentCenter;
-    [self addSubview:_scanDateLabel];
 
     _scanButton = [[SPKProgressPillButton alloc] initWithFrame:CGRectZero];
     _scanButton.translatesAutoresizingMaskIntoConstraints = NO;
@@ -124,15 +116,8 @@ typedef NS_ENUM(NSInteger, SPKPACategory) {
         [_scanButton.trailingAnchor constraintEqualToAnchor:self.trailingAnchor
                                                    constant:-16.0],
         [_scanButton.heightAnchor constraintEqualToConstant:48.0],
-
-        [_scanDateLabel.topAnchor constraintEqualToAnchor:_scanButton.bottomAnchor
-                                                 constant:10.0],
-        [_scanDateLabel.leadingAnchor constraintEqualToAnchor:self.leadingAnchor
-                                                     constant:24.0],
-        [_scanDateLabel.trailingAnchor constraintEqualToAnchor:self.trailingAnchor
-                                                      constant:-24.0],
-        [_scanDateLabel.bottomAnchor constraintEqualToAnchor:self.bottomAnchor
-                                                    constant:-20.0],
+        [_scanButton.bottomAnchor constraintEqualToAnchor:self.bottomAnchor
+                                                  constant:-20.0],
     ]];
     return self;
 }
@@ -186,6 +171,9 @@ typedef NS_ENUM(NSInteger, SPKPACategory) {
 @property (nonatomic, copy) NSArray<SPKPACategoryRow *> *changeRows;                // section: accumulated changes
 @property (nonatomic, copy) NSString *selfPK;
 @property (nonatomic, assign) BOOL trackVisits;
+@property (nonatomic, copy, nullable) NSString *scanDateText; // "Last scanned …", nil if never
+@property (nonatomic, strong, nullable) NSTimer *buttonCycleTimer;
+@property (nonatomic, assign) BOOL buttonShowingDate;
 @end
 
 @implementation SPKProfileAnalyzerViewController
@@ -245,6 +233,7 @@ typedef NS_ENUM(NSInteger, SPKPACategory) {
 }
 
 - (void)dealloc {
+    [self stopButtonCycle];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     // Intentionally NOT cancelling the service — scans run in the background and
     // report completion via the notification pill.
@@ -260,6 +249,11 @@ typedef NS_ENUM(NSInteger, SPKPACategory) {
     [self loadCachedData];
     [self paintHeaderIdentity];
     [self syncRunningState];
+}
+
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    [self stopButtonCycle]; // don't tick while off-screen (restarts on re-appear)
 }
 
 #pragma mark - Header
@@ -312,14 +306,17 @@ static NSString *SPKPACompact(NSInteger n) {
 - (void)paintHeaderIdentity {
     NSDictionary *cached = [SPKProfileAnalyzerStorage headerInfoForUserPK:self.selfPK];
     SPKProfileAnalyzerSnapshot *cur = self.report.current;
+    // Live session identity paints the real avatar + @username immediately, even
+    // before any analysis has run (no network — read straight off the IGUser).
+    NSDictionary *live = [SPKUtils currentUserIdentity];
 
-    NSString *username = cached[@"username"] ?: cur.selfUsername;
-    NSString *fullName = cached[@"full_name"] ?: cur.selfFullName;
+    NSString *username = cached[@"username"] ?: cur.selfUsername ?: live[@"username"];
+    NSString *fullName = cached[@"full_name"] ?: cur.selfFullName ?: live[@"full_name"];
     BOOL haveData = (cached != nil) || (cur != nil);
     NSInteger followers = cached[@"follower_count"] ? [cached[@"follower_count"] integerValue] : cur.followerCount;
     NSInteger following = cached[@"following_count"] ? [cached[@"following_count"] integerValue] : cur.followingCount;
     NSInteger posts = cached[@"media_count"] ? [cached[@"media_count"] integerValue] : cur.mediaCount;
-    NSString *picURL = cached[@"profile_pic_url"] ?: cur.selfProfilePicURL;
+    NSString *picURL = cached[@"profile_pic_url"] ?: cur.selfProfilePicURL ?: live[@"profile_pic_url"];
 
     self.header.nameLabel.text = fullName.length ? fullName : (username.length ? username : @"Profile Analyzer");
     self.header.usernameLabel.text = username.length ? [NSString stringWithFormat:@"@%@", username] : @"";
@@ -332,19 +329,52 @@ static NSString *SPKPACompact(NSInteger n) {
         df.dateStyle = NSDateFormatterMediumStyle;
         df.timeStyle = NSDateFormatterShortStyle;
         df.doesRelativeDateFormatting = YES;
-        self.header.scanDateLabel.text = [NSString stringWithFormat:@"Last analyzed %@", [df stringFromDate:cur.scanDate]];
+        self.scanDateText = [NSString stringWithFormat:@"Last scanned: %@", [df stringFromDate:cur.scanDate]];
     } else {
-        self.header.scanDateLabel.text = @"Not analyzed yet";
+        self.scanDateText = nil;
     }
 
     if (picURL.length && self.selfPK.length) {
         [self.header.avatarView configureWithPK:self.selfPK urlString:picURL];
     }
 
-    if (!self.header.scanButton.isBusy) {
-        [self.header.scanButton setText:(self.report.current ? @"Re-run Analysis" : @"Run Analysis")];
-    }
+    [self refreshIdleButton];
     [self.view setNeedsLayout];
+}
+
+// The idle CTA label. While a scan has run, the button intermittently swaps this
+// for the "Last scanned ..." line so we don't need a separate footer.
+- (NSString *)idleButtonCTA {
+    return self.report.current ? @"Scan Again" : @"Scan Now";
+}
+
+- (void)refreshIdleButton {
+    if (self.header.scanButton.isBusy)
+        return; // scanning — leave the label to setScanning:
+    [self stopButtonCycle];
+    self.buttonShowingDate = NO;
+    [self.header.scanButton setTextAnimated:[self idleButtonCTA]];
+    if (self.scanDateText.length) {
+        self.buttonCycleTimer = [NSTimer scheduledTimerWithTimeInterval:3.0
+                                                                 target:self
+                                                               selector:@selector(cycleButtonTick)
+                                                               userInfo:nil
+                                                                repeats:YES];
+    }
+}
+
+- (void)cycleButtonTick {
+    if (self.header.scanButton.isBusy || !self.scanDateText.length) {
+        [self stopButtonCycle];
+        return;
+    }
+    self.buttonShowingDate = !self.buttonShowingDate;
+    [self.header.scanButton setTextAnimated:(self.buttonShowingDate ? self.scanDateText : [self idleButtonCTA])];
+}
+
+- (void)stopButtonCycle {
+    [self.buttonCycleTimer invalidate];
+    self.buttonCycleTimer = nil;
 }
 
 #pragma mark - Data
@@ -513,10 +543,11 @@ static NSString *SPKPACompact(NSInteger n) {
 - (void)setScanning:(BOOL)scanning {
     self.header.scanButton.busy = scanning;
     if (scanning) {
-        [self.header.scanButton setText:@"Analyzing..."];
+        [self stopButtonCycle]; // the scan owns the label while running
+        [self.header.scanButton setTextAnimated:@"Analyzing..."];
         [self.header.scanButton setProgress:MAX(0.02, [SPKProfileAnalyzerService sharedService].currentFraction) animated:NO];
     } else {
-        [self.header.scanButton setText:(self.report.current ? @"Re-run Analysis" : @"Run Analysis")];
+        [self refreshIdleButton];
     }
 }
 
@@ -555,7 +586,6 @@ typedef NS_ENUM(NSInteger, SPKPAOptionRow) {
 };
 
 typedef NS_ENUM(NSInteger, SPKPASectionKind) {
-    SPKPASectionEmpty,   // no scan yet — single explanatory row
     SPKPASectionCurrent, // mutuals / not-following-back / don't-follow-back
     SPKPASectionChanges, // new/lost/started/unfollowed/updates (needs 2 scans)
     SPKPASectionOptions, // track visits + visited profiles + about
@@ -564,9 +594,9 @@ typedef NS_ENUM(NSInteger, SPKPASectionKind) {
 
 - (NSArray<NSNumber *> *)activeSections {
     NSMutableArray *s = [NSMutableArray array];
-    if (!self.report.current) {
-        [s addObject:@(SPKPASectionEmpty)];
-    } else {
+    // No dedicated "empty" section: the header (avatar / @username / — stats /
+    // Run Analysis / "Not analyzed yet") already reads as the empty state.
+    if (self.report.current) {
         [s addObject:@(SPKPASectionCurrent)];
         if (self.changeRows.count > 0)
             [s addObject:@(SPKPASectionChanges)];
@@ -596,8 +626,6 @@ typedef NS_ENUM(NSInteger, SPKPASectionKind) {
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     switch ([self kindForSection:section]) {
-    case SPKPASectionEmpty:
-        return 1;
     case SPKPASectionCurrent:
         return self.currentRows.count;
     case SPKPASectionChanges:
@@ -611,8 +639,6 @@ typedef NS_ENUM(NSInteger, SPKPASectionKind) {
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section {
     switch ([self kindForSection:section]) {
-    case SPKPASectionEmpty:
-        return nil;
     case SPKPASectionCurrent:
         return @"This Scan";
     case SPKPASectionChanges:
@@ -636,18 +662,6 @@ typedef NS_ENUM(NSInteger, SPKPASectionKind) {
     cell.selectedBackgroundView = selected;
     content.textProperties.color = [SPKUtils SPKColor_InstagramPrimaryText];
     content.secondaryTextProperties.color = [SPKUtils SPKColor_InstagramSecondaryText];
-
-    if (kind == SPKPASectionEmpty) {
-        content.text = @"No analysis yet";
-        content.secondaryText = @"Tap Run Analysis to fetch your followers and following.";
-        content.secondaryTextProperties.numberOfLines = 0;
-        content.textToSecondaryTextVerticalPadding = 4.5;
-        content.image = [SPKAssetUtils instagramIconNamed:@"profile_analyzer" pointSize:24.0 renderingMode:UIImageRenderingModeAlwaysTemplate];
-        content.imageProperties.tintColor = [SPKUtils SPKColor_InstagramPrimaryText];
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-        cell.contentConfiguration = content;
-        return cell;
-    }
 
     if (kind == SPKPASectionReset) {
         content.text = @"Reset Profile Analyzer Data";
@@ -740,9 +754,6 @@ typedef NS_ENUM(NSInteger, SPKPASectionKind) {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
     SPKPASectionKind kind = [self kindForSection:indexPath.section];
 
-    if (kind == SPKPASectionEmpty)
-        return;
-
     if (kind == SPKPASectionReset) {
         [self confirmReset];
         return;
@@ -817,6 +828,11 @@ typedef NS_ENUM(NSInteger, SPKPASectionKind) {
     NSString *owner = self.selfPK;
     vc.onRemoveVisit = ^(SPKProfileAnalyzerVisit *visit) {
         [SPKProfileAnalyzerStorage removeVisitForUserPK:owner visitedPK:visit.user.pk];
+    };
+    __weak typeof(self) weakSelf = self;
+    vc.onClearHistory = ^{
+        [SPKProfileAnalyzerStorage clearVisitsForUserPK:owner];
+        [weakSelf loadCachedData];
     };
     [self.navigationController pushViewController:vc animated:YES];
 }

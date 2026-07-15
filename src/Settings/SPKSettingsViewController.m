@@ -1,12 +1,17 @@
 #import "SPKSettingsViewController.h"
 #import "../App/SPKStartupHooks.h"
 #import "../AssetUtils.h"
+#import "../Features/Messages/MessageSeenButtons.h"
+#import "../Features/Profile/FollowIndicator.h"
 #import "../Shared/ActionButton/ActionButtonCore.h"
 #import "../Shared/Avatars/SPKAvatarCache.h"
 #import "../Shared/UI/SPKIGAlertPresenter.h"
 #import "../Shared/UI/SPKMediaChrome.h"
 #import "../Shared/UI/SPKSwitch.h"
+#import "../App/SPKCore.h"
+#import "SPKOnboardingViewController.h"
 #import "SPKPreferenceAvailability.h"
+#import "SPKWhatsNewViewController.h"
 
 static char rowStaticRef[] = "row";
 static CGFloat const kSPKSettingsRemoteImageSize = 45.0;
@@ -56,6 +61,7 @@ static double SPKNormalizedStepperValue(SPKSetting *row, double value) {
 @property (nonatomic) BOOL reduceMargin;
 @property (nonatomic) BOOL defersRestartPrompt;
 @property (nonatomic) BOOL hasPendingRestartChanges;
+@property (nonatomic) BOOL didAttemptOnboarding;
 
 @end
 
@@ -355,22 +361,45 @@ static UIImage *SPKSettingsBreadcrumbChevronImage(void) {
     [self.tableView reloadData];
 }
 
-- (void)viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self presentIntroSheetsIfNeeded];
+}
 
-    if (![[[NSUserDefaults standardUserDefaults] objectForKey:@"app_first_run"] isEqualToString:SPKVersionString]) {
-        UIViewController *presenter = self.presentingViewController;
-        [SPKIGAlertPresenter presentAlertFromViewController:presenter
-                                                      title:@"Sparkle Settings Info"
-                                                    message:@"In the future: Hold down on the three lines at the top right of your profile page, to re-open Sparkle settings."
-                                                    actions:@[
-                                                        [SPKIGAlertAction actionWithTitle:@"OK"
-                                                                                    style:SPKIGAlertActionStyleDefault
-                                                                                  handler:nil],
-                                                    ]];
+// Intro sheets shown when the user opens Sparkle settings. Only the root settings
+// page presents them (sub-topic pages are also SPKSettingsViewControllers pushed
+// onto the same stack), and at most one flow per process:
+//   - First-ever run (`app_first_run` never stamped) → onboarding only. On finish
+//     it stamps both keys so a fresh install doesn't also get What's New.
+//   - Otherwise, already onboarded but a new version's notes are unseen (including
+//     upgraders who predate the feature) → What's New only.
+// Gating predicates live in SPKCore so the launch-time auto-open agrees. The Tools
+// "Show Onboarding" / "Show What's New" buttons replay each directly without
+// touching this state (onFinish is nil).
+- (void)presentIntroSheetsIfNeeded {
+    if (self.didAttemptOnboarding)
+        return;
+    if (self.navigationController.viewControllers.firstObject != self)
+        return;
+    if (self.presentedViewController)
+        return;
 
-        // Done with first-time setup for this version
-        [[NSUserDefaults standardUserDefaults] setValue:SPKVersionString forKey:@"app_first_run"];
+    self.didAttemptOnboarding = YES;
+
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+
+    if (SPKCoreOnboardingPending()) {
+        [SPKOnboardingViewController presentFromViewController:self onFinish:^{
+            [defaults setValue:SPKVersionString forKey:@"app_first_run"];
+            [defaults setValue:SPKVersionString forKey:@"app_last_whatsnew_version"];
+        }];
+        return;
+    }
+
+    if (SPKCoreWhatsNewPending()) {
+        [SPKWhatsNewViewController presentFromViewController:self onFinish:^{
+            [defaults setValue:SPKVersionString forKey:@"app_last_whatsnew_version"];
+        }];
     }
 }
 
@@ -632,6 +661,12 @@ static UIImage *SPKSettingsBreadcrumbChevronImage(void) {
         config.preferredSymbolConfigurationForImage = [UIImageSymbolConfiguration configurationWithPointSize:10.0 weight:UIImageSymbolWeightBold];
 
         menuButton.configuration = config;
+        // Must be set AFTER assigning the configuration: UIButtonConfiguration
+        // re-manages titleLabel and defaults it to multi-line, so a long selected
+        // value wraps onto a second line inside the accessory. Clamp it to one line
+        // (truncating) here so the value stays on the row like every other picker.
+        menuButton.titleLabel.numberOfLines = 1;
+        menuButton.titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         menuButton.tintColor = rowEnabled ? [SPKUtils SPKColor_InstagramSecondaryText] : [SPKUtils SPKColor_InstagramTertiaryText];
         if (!rowEnabled) {
             cellContentConfig.textProperties.color = [SPKUtils SPKColor_InstagramSecondaryText];
@@ -1146,6 +1181,12 @@ static UIImage *SPKSettingsBreadcrumbChevronImage(void) {
     [[NSUserDefaults standardUserDefaults] synchronize];
     if ([defaultsKey containsString:@"_action_btn"]) {
         [[NSNotificationCenter defaultCenter] postNotificationName:SPKActionButtonConfigurationDidChangeNotification object:nil];
+    }
+    if ([defaultsKey hasPrefix:@"profile_follow_indicator"]) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:SPKFollowIndicatorDidChangeNotification object:nil];
+    }
+    if ([defaultsKey isEqualToString:@"msgs_seen_button_position"]) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:SPKMessageSeenButtonPositionDidChangeNotification object:nil];
     }
 
     SPKLog(@"General", @"Menu changed: %@ = %@", writeKey, properties[@"value"]);

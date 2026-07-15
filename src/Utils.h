@@ -87,6 +87,10 @@ FOUNDATION_EXPORT Class _Nullable SPKResolveIGClass(NSString *qualified, NSStrin
 + (nullable NSString *)pkFromIGUser:(nullable id)user;
 // Current logged-in user's PK via the active session, or nil when unavailable.
 + (nullable NSString *)currentUserPK;
+// Current logged-in user's identity (pk / username / full_name / profile_pic_url)
+// read live from the active session's IGUser, or nil when unavailable. Values are
+// only present when resolvable; useful for painting identity before any network fetch.
++ (nullable NSDictionary<NSString *, NSString *> *)currentUserIdentity;
 
 /// IGDSLauncherConfig hooks: when Liquid Glass is on, returns YES; otherwise returns `fallback` (stock).
 + (_Bool)spk_liquidGlassLauncherPrefKey:(NSString *)key orig:(_Bool)fallback;
@@ -98,6 +102,17 @@ FOUNDATION_EXPORT Class _Nullable SPKResolveIGClass(NSString *qualified, NSStrin
 + (unsigned long long)cleanCacheReturningFreedBytes;
 + (unsigned long long)cacheSizeBytes;
 + (NSString *)formattedCacheSize;
+
+/// Time-only date-format component ("HH:mm" or "h:mm a") matching the device's
+/// 12/24-hour clock setting. Use it to compose "<date> at <time>" strings so
+/// they follow the user's preference automatically (no in-app setting).
++ (NSString *)spk_localizedTimeComponent;
+
+/// Month/day date-format component ordered for the current locale (e.g. "MMM d"
+/// in en_US, "d MMM" in most others), optionally including the year. Pair with
+/// spk_localizedTimeComponent so dates follow the user's regional format.
++ (NSString *)spk_localizedDateComponentIncludingYear:(BOOL)includeYear;
+
 + (NSString *)cacheAutoClearMode;
 + (BOOL)shouldAutomaticallyClearCacheNow;
 + (void)markCacheClearedNow;

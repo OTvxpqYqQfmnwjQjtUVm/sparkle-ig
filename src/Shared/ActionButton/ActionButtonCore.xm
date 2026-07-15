@@ -603,7 +603,7 @@ static NSString *SPKProfilePrivacyText(id user) {
 
 static UIAction *SPKProfileDisabledInfoAction(NSString *title, NSString *resourceName) {
     UIAction *action = [UIAction actionWithTitle:title
-                                           image:[SPKAssetUtils instagramIconNamed:(resourceName.length > 0 ? resourceName : @"info") pointSize:22.0]
+                                           image:[SPKAssetUtils menuIconNamed:(resourceName.length > 0 ? resourceName : @"info")]
                                       identifier:nil
                                          handler:^(__unused UIAction *menuAction){
                                          }];
@@ -1179,15 +1179,23 @@ static SPKMediaPreviewPlaybackBlock SPKResumePlaybackBlockForContext(SPKActionBu
     } copy];
 }
 
+// Load at native size (0 = no downscale) and reinterpret to 22pt via
+// menuSizedIcon:. Requesting a sub-native size here would send the icon through
+// SPKAssetScaleImage's UIGraphicsImageRenderer pass, which iOS 16's UIMenu
+// renders blank for vector-backed (.svg) glyphs. `size` is kept for API compat.
 UIImage *SPKActionButtonMenuIconForIdentifier(NSString *identifier, CGFloat size) {
-    return SPKIconForActionIdentifier(identifier, SPKActionButtonSourceFeed, size, nil);
+    (void)size;
+    UIImage *icon = SPKIconForActionIdentifier(identifier, SPKActionButtonSourceFeed, 0, nil);
+    return [SPKAssetUtils menuSizedIcon:icon];
 }
 
 static UIImage *SPKActionButtonMenuIconForContext(NSString *identifier, SPKActionButtonContext *context, CGFloat size) {
+    (void)size;
     SPKActionButtonSource menuSource = (context.source == SPKActionButtonSourceReels)
                                            ? SPKActionButtonSourceFeed
                                            : context.source;
-    return SPKIconForActionIdentifier(identifier, menuSource, size, context);
+    UIImage *icon = SPKIconForActionIdentifier(identifier, menuSource, 0, context);
+    return [SPKAssetUtils menuSizedIcon:icon];
 }
 
 static NSInteger SPKClampedIndex(NSInteger index, NSInteger count) {
@@ -3140,7 +3148,7 @@ static NSArray<UIMenuElement *> *SPKBuildBulkMenuChildren(SPKActionButtonConfigu
     }
     if (destinations.count > 0) {
         UIAction *selectMediaAction = [UIAction actionWithTitle:@"Select Media"
-                                                          image:[SPKAssetUtils instagramIconNamed:@"circle_check" pointSize:22.0]
+                                                          image:[SPKAssetUtils menuIconNamed:@"circle_check"]
                                                      identifier:nil
                                                         handler:^(__unused UIAction *action) {
                                                             // Re-resolve at tap time as well, in case the carousel changed.
@@ -3192,7 +3200,7 @@ static NSArray<UIMenuElement *> *SPKBuildBulkMenuChildren(SPKActionButtonConfigu
     // collapsible sections. Title carries the carousel item count.
     NSString *baseTitle = sectionTitle.length > 0 ? sectionTitle : @"Bulk";
     NSString *title = [NSString stringWithFormat:@"%@ • %lu", baseTitle, (unsigned long)bulkEntries.count];
-    UIImage *bulkIcon = [[[SPKAssetUtils instagramIconNamed:(sectionIconName.length > 0 ? sectionIconName : @"carousel") pointSize:22.0] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] imageWithTintColor:[UIColor labelColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
+    UIImage *bulkIcon = [[[SPKAssetUtils menuIconNamed:(sectionIconName.length > 0 ? sectionIconName : @"carousel")] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] imageWithTintColor:[UIColor labelColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
     UIMenuElement *section = collapsible
                                  ? SPKSubmenuOrSingleElement(title, bulkIcon, children)
                                  : [UIMenu menuWithTitle:@"" image:nil identifier:nil options:UIMenuOptionsDisplayInline children:children];
@@ -3309,7 +3317,7 @@ static NSArray<UIMenuElement *> *SPKBuildActionMenuElements(SPKActionButtonConte
         if (group.collapsible && groupElements.count > 1) {
             UIImage *sectionImage = nil;
             if (group.iconName.length > 0) {
-                sectionImage = [[[SPKAssetUtils instagramIconNamed:group.iconName pointSize:22.0] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] imageWithTintColor:[UIColor labelColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
+                sectionImage = [[[SPKAssetUtils menuIconNamed:group.iconName] imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate] imageWithTintColor:[UIColor labelColor] renderingMode:UIImageRenderingModeAlwaysOriginal];
             }
             UIMenu *submenu = [UIMenu menuWithTitle:title ?: @""
                                               image:sectionImage

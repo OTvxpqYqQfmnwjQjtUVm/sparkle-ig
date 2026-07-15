@@ -38,6 +38,10 @@ typedef NS_ENUM(NSInteger, SPKPAListKind) {
 // owner can persist the deletion. Optional.
 @property (nonatomic, copy, nullable) void (^onRemoveVisit)(SPKProfileAnalyzerVisit *visit);
 
+// Visited-list only: invoked when the user clears the whole history from the ⋯
+// menu, so the owner can wipe stored visits. Optional.
+@property (nonatomic, copy, nullable) void (^onClearHistory)(void);
+
 @end
 
 NS_ASSUME_NONNULL_END

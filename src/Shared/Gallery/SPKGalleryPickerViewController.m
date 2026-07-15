@@ -377,7 +377,7 @@ typedef NS_ENUM(NSInteger, SPKGalleryPickerViewMode) {
 - (void)refreshNavigationRightItems {
     NSString *toggleResource = self.viewMode == SPKGalleryPickerViewModeGrid ? @"list" : @"grid";
     NSString *toggleAX = self.viewMode == SPKGalleryPickerViewModeGrid ? @"List view" : @"Grid view";
-    UIBarButtonItem *toggleItem = [[UIBarButtonItem alloc] initWithImage:[SPKAssetUtils instagramIconNamed:toggleResource pointSize:22.0]
+    UIBarButtonItem *toggleItem = [[UIBarButtonItem alloc] initWithImage:[SPKAssetUtils instagramIconNamed:toggleResource pointSize:24.0]
                                                                    style:UIBarButtonItemStylePlain
                                                                   target:self
                                                                   action:@selector(togglePickerViewMode)];
